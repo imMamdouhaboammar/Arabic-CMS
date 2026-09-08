@@ -21,3 +21,14 @@ Keep credentials, private services, and reviewed MCP integrations in user-level 
 - Docs researcher: Astro, EmDash, and dependency API verification
 
 Use these roles only when they materially improve the active task.
+
+
+## Verification
+
+Before merging repository changes, run the checks defined by the repository:
+
+- `npm test`
+- `npm run typecheck`
+- `npm run build`
+
+Treat a failing check as a blocker unless the failure is proven unrelated and explicitly documented.

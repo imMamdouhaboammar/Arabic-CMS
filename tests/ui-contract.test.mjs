@@ -79,3 +79,28 @@ test("public shell avoids unnecessary sequential CMS queries", async () => {
   );
   assert.doesNotMatch(base, /<h4 class="footer-heading">/);
 });
+
+test("long-form reading surfaces stay RTL-native and low-runtime", async () => {
+  const [page, article] = await Promise.all([
+    read("src/pages/pages/[slug].astro"),
+    read("src/pages/posts/[slug].astro"),
+  ]);
+
+  assert.doesNotMatch(page, /padding-left|border-left/);
+  assert.match(page, /padding-inline-start/);
+  assert.match(page, /border-inline-start/);
+  assert.doesNotMatch(article, /IntersectionObserver/);
+  assert.match(article, /overflow-wrap:\s*anywhere/);
+});
+
+test("published dates expose machine-readable datetime values", async () => {
+  const [card, posts, article] = await Promise.all([
+    read("src/components/PostCard.astro"),
+    read("src/pages/posts/index.astro"),
+    read("src/pages/posts/[slug].astro"),
+  ]);
+
+  assert.match(card, /datetime=\{date\.toISOString\(\)\}/);
+  assert.match(posts, /datetime=\{post\.data\.publishedAt\.toISOString\(\)\}/);
+  assert.match(article, /datetime=\{post\.data\.publishedAt\.toISOString\(\)\}/);
+});

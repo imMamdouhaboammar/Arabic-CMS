@@ -59,3 +59,11 @@ test("narrow reading surfaces use logical spacing and resilient controls", async
   assert.match(search, /\.search-input\s*\{[^}]*min-height:\s*44px;/s);
   assert.match(search, /\.search-button\s*\{[^}]*min-height:\s*44px;/s);
 });
+
+test("Astro and EmDash default fresh content to Arabic", async () => {
+  const config = await read("astro.config.mjs");
+
+  assert.match(config, /defaultLocale:\s*"ar"/);
+  assert.match(config, /locales:\s*\["ar"\]/);
+  assert.match(config, /scripts:\s*\["arabic"\]/);
+});

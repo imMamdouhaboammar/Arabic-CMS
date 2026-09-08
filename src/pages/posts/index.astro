@@ -86,7 +86,7 @@ const articleCountText =
 										</>
 									)}
 									{post.data.publishedAt && (
-										<time>{formatDate(post.data.publishedAt)}</time>
+										<time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time>
 									)}
 									{post.data.publishedAt && <span class="meta-dot" />}
 									<span>{formatReadingTime(getReadingTime(post.data.content))}</span>

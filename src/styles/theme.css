@@ -155,3 +155,39 @@ bdi,
 		transition-duration: 0.01ms !important;
 	}
 }
+
+
+/* Public-shell visual overrides */
+.search-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--spacing-2);
+	min-height: 44px;
+	padding: var(--spacing-2) var(--spacing-3);
+	border-radius: var(--radius);
+	color: var(--color-text-secondary);
+	text-decoration: none;
+	font-size: var(--font-size-sm);
+}
+
+.search-link:hover {
+	color: var(--color-text);
+	background: var(--color-bg-subtle);
+}
+
+.search-link svg {
+	flex: 0 0 auto;
+}
+
+.theme-btn {
+	width: 44px;
+	height: 44px;
+}
+
+@media (max-width: 640px) {
+	.search-link {
+		grid-column: 1;
+		justify-self: start;
+	}
+}

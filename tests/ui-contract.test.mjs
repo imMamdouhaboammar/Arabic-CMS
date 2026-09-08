@@ -27,10 +27,10 @@ test("motion and theme controls expose accessibility safeguards", async () => {
     read("src/layouts/Base.astro"),
   ]);
   assert.match(theme, /prefers-reduced-motion:\s*reduce/);
+  assert.match(theme, /\.theme-btn\s*\{[^}]*width:\s*44px;[^}]*height:\s*44px;/s);
+  assert.match(theme, /\.search-link\s*\{/);
   assert.match(base, /aria-pressed="false"/);
   assert.match(base, /setAttribute\("aria-pressed"/);
-  assert.match(base, /width:\s*44px;/);
-  assert.match(base, /height:\s*44px;/);
 });
 
 test("fresh CMS seed is Arabic-first and moderation-safe", async () => {

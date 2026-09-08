@@ -10,7 +10,7 @@ import {
   stat,
   writeFile,
 } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 const DEFAULTS = {
@@ -254,7 +254,7 @@ async function validateManifest(partialRoot, manifest) {
     throw new Error("Backup manifest has no captured files");
   }
 
-  const expected = new Set(["data.db"]);
+  const capturedPaths = new Set();
   for (const file of manifest.files) {
     if (
       typeof file.path !== "string" ||
@@ -263,7 +263,10 @@ async function validateManifest(partialRoot, manifest) {
     ) {
       throw new Error("Backup manifest contains an invalid file entry");
     }
-    expected.add(file.path);
+    if (capturedPaths.has(file.path)) {
+      throw new Error(`Backup manifest contains duplicate file path: ${file.path}`);
+    }
+    capturedPaths.add(file.path);
 
     const destination = join(partialRoot, ...file.path.split("/"));
     const info = await stat(destination);
@@ -275,7 +278,7 @@ async function validateManifest(partialRoot, manifest) {
     }
   }
 
-  if (!expected.has("data.db")) {
+  if (!capturedPaths.has("data.db")) {
     throw new Error("Backup manifest is missing data.db");
   }
   if (!manifest.files.some((file) => file.path.startsWith("uploads/"))) {

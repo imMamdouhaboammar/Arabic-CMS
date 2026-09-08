@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import {
-  lstat,
   mkdtemp,
   mkdir,
   readFile,
@@ -16,7 +15,6 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
-const repoRoot = new URL("../", import.meta.url);
 const backupScript = new URL("../scripts/backup.mjs", import.meta.url);
 
 const sha256 = async (path) =>

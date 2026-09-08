@@ -32,3 +32,30 @@ test("motion and theme controls expose accessibility safeguards", async () => {
   assert.match(base, /width:\s*44px;/);
   assert.match(base, /height:\s*44px;/);
 });
+
+test("fresh CMS seed is Arabic-first and moderation-safe", async () => {
+  const seed = JSON.parse(await read("seed/seed.json"));
+  const posts = seed.collections.find((collection) => collection.slug === "posts");
+
+  assert.equal(seed.settings.title, "ممدوح أبو عمار");
+  assert.match(seed.settings.tagline, /هندسة البرمجيات/);
+  assert.equal(posts.commentsEnabled, false);
+  assert.equal(posts.label, "المقالات");
+  assert.equal(seed.menus[0].items[0].label, "الرئيسية");
+  assert.deepEqual(seed.sections, []);
+  assert.deepEqual(seed.content.posts, []);
+  assert.deepEqual(seed.content.pages, []);
+});
+
+test("narrow reading surfaces use logical spacing and resilient controls", async () => {
+  const [cards, posts, search] = await Promise.all([
+    read("src/components/PostCard.astro"),
+    read("src/pages/posts/index.astro"),
+    read("src/pages/search.astro"),
+  ]);
+
+  assert.match(cards, /margin-inline-start:\s*2px;/);
+  assert.match(posts, /\.post-meta\s*\{[^}]*flex-wrap:\s*wrap;/s);
+  assert.match(search, /\.search-input\s*\{[^}]*min-height:\s*44px;/s);
+  assert.match(search, /\.search-button\s*\{[^}]*min-height:\s*44px;/s);
+});

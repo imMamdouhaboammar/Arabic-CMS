@@ -71,6 +71,7 @@ const tags = post.data.terms?.tag ?? [];
 
 // Fetch recent posts for related recommendations
 const { entries: recentPosts } = await getEmDashCollection("posts", {
+	status: "published",
 	orderBy: { published_at: "desc" },
 	limit: 4,
 });

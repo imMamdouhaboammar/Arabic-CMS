@@ -1,6 +1,6 @@
 # Backup and Restore Contract
 
-This document defines the recovery boundary for the Node.js deployment in this repository. It is an operational contract only. Backup automation, scheduling, retention tooling, and production data mutation are outside Issue #5.
+This document defines the recovery boundary for the Node.js deployment in this repository. The repository now provides a local capture command for this boundary. Scheduling, retention tooling, remote backup storage, and production restore execution remain operator concerns.
 
 ## Recovery boundary
 
@@ -40,13 +40,50 @@ This keeps the database snapshot internally consistent while the write-quiescenc
 8. Only after successful validation, mark the backup set complete and release the write-quiescence window
 9. If any capture or validation step fails, leave the source state untouched, discard or clearly quarantine the incomplete destination, and return a failure
 
-Issue #15 may automate this sequence later. Automation must preserve the same boundary and must not replace SQLite snapshot semantics with a blind live file copy.
+The repository backup command implements this sequence with SQLite `VACUUM INTO`, staged media copying, SHA-256 file metadata, and atomic publication of the completed set.
+
+## Automated capture command
+
+The command deliberately does not stop application/editor writes for you. First establish the write-quiescence window described above, then run:
+
+```bash
+npm run backup -- --confirm-quiesced
+```
+
+Defaults:
+
+- source database: `data.db`
+- source media: `uploads/`
+- destination root: `backups/`
+
+For an explicit deployment layout:
+
+```bash
+npm run backup -- --confirm-quiesced \
+  --source-db /srv/arabic-cms/data.db \
+  --source-uploads /srv/arabic-cms/uploads \
+  --output /srv/backups/arabic-cms
+```
+
+The command refuses to run without `--confirm-quiesced`. That flag is an operator assertion that all editorial and media writes have already stopped for the capture window.
+
+Each completed backup is published as one timestamped `backup-*` directory containing:
+
+- `data.db` — a SQLite `VACUUM INTO` snapshot
+- `uploads/` — the matching local media tree
+- `manifest.json` — capture time, application metadata, logical file paths, byte sizes, and SHA-256 checksums
+
+The operation builds the set under a `.partial-*` directory and renames it to `backup-*` only after snapshot, media capture, and checksum validation succeed. A `.partial-*` directory is never a valid restore source. Normal failures are cleaned up and exit non-zero; an unexpected process or host interruption may leave a `.partial-*` directory that operators must treat as incomplete.
+
+Symbolic links and non-regular entries under `uploads/` are rejected rather than followed into the backup.
+
+The default `backups/` directory is excluded from Git. Production backup destinations should live on storage with the access, encryption, retention, and durability controls required by the deployment.
 
 ## Secret and configuration prerequisites
 
 `EMDASH_ENCRYPTION_KEY` is operator-provided secret material and is not stored in the SQLite database. Preserve the deployment's key in a durable **secret store**, password manager, or KMS according to the operator's access policy.
 
-The plaintext `EMDASH_ENCRYPTION_KEY` must **not be stored in the backup artifact**, committed to Git, written into the manifest, or copied into ordinary documentation. The backup set may record a non-secret key identifier/fingerprint if the operational tooling supports one.
+The plaintext `EMDASH_ENCRYPTION_KEY` must **not be stored in the backup artifact**, committed to Git, written into the manifest, or copied into ordinary documentation. The backup command does not read or serialize this environment variable. The backup set may record a non-secret key identifier/fingerprint only if future operational tooling explicitly adds one.
 
 A restore operator must also know the application version/commit and deployment configuration required to place the database and media at the paths expected by the application. Environment-specific credentials stay in the deployment secret/configuration store rather than the CMS data backup.
 
@@ -66,24 +103,26 @@ At minimum:
 
 Before restoring:
 
-1. Select one **complete** backup set; never mix database and media from different sets
+1. Select one **complete** `backup-*` set; never use `.partial-*` and never mix database and media from different sets
 2. Use an empty/disposable target or place the destination application into maintenance with all writers stopped
 3. Confirm the target application version/schema is compatible with the recorded backup version
 4. Restore the required deployment secrets from the operator secret store, including the same `EMDASH_ENCRYPTION_KEY` when applicable
 5. Confirm the target paths for `data.db` and `uploads/`
 6. Confirm filesystem ownership and **writability/permissions** are correct for the Node.js process
 7. Keep the source backup immutable during the restore attempt
+8. Validate file byte sizes and SHA-256 checksums against `manifest.json` before using the set
 
 ## Restore sequence
 
 1. Stop the target application or otherwise guarantee no database/media writer is active
 2. Re-check that the selected backup set contains both the database snapshot and `uploads/`
-3. Restore the database snapshot to the configured `data.db` location
-4. Restore the matching media directory to `uploads/`
-5. Apply required environment configuration and secrets from the deployment's secret store
-6. Set required ownership and filesystem permissions
-7. Start the application
-8. Run the restore verification checklist below before declaring recovery successful
+3. Validate the files against `manifest.json`
+4. Restore the database snapshot to the configured `data.db` location
+5. Restore the matching media directory to `uploads/`
+6. Apply required environment configuration and secrets from the deployment's secret store
+7. Set required ownership and filesystem permissions
+8. Start the application
+9. Run the restore verification checklist below before declaring recovery successful
 
 ## Restore verification checklist
 
@@ -100,12 +139,13 @@ A restore is not complete until an operator verifies all applicable checks:
 
 If any verification check fails, the restore is failed. Keep the target isolated, preserve diagnostics without secret values, and roll back to the pre-restore state or retry from a known-complete backup set.
 
-## What this contract does not implement
+## What this command does not implement
 
-This document does not create a backup command, background job, cloud storage integration, retention policy, or production restore workflow. Those implementation choices belong in follow-up Issues such as #15 and must satisfy this contract rather than redefine it implicitly.
+The repository command performs one local capture. It does not schedule backups, upload them to remote/object storage, enforce retention, rotate encryption-at-rest keys, stop application writes automatically, or execute a production restore. Those operational controls must wrap this command without weakening the recovery boundary above.
 
 ## Primary references
 
 - SQLite Online Backup API: https://www.sqlite.org/backup.html
 - SQLite `VACUUM INTO`: https://sqlite.org/lang_vacuum.html
+- Node.js `node:sqlite`: https://nodejs.org/docs/latest-v22.x/api/sqlite.html
 - EmDash secrets and key management: https://docs.emdashcms.com/deployment/secrets/

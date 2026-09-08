@@ -32,6 +32,7 @@ const formattedDate = date
 			day: "numeric",
 		})
 	: null;
+const dateIso = date?.toISOString() ?? null;
 ---
 
 <article class="post-card">
@@ -88,7 +89,7 @@ const formattedDate = date
 						</>
 					)
 				}
-				{formattedDate && <time datetime={date.toISOString()}>{formattedDate}</time>}
+				{formattedDate && dateIso && <time datetime={dateIso}>{formattedDate}</time>}
 				{formattedDate && readingTime && <span class="meta-dot" />}
 				{readingTime && <span>{formatReadingTime(readingTime)}</span>}
 			</div>

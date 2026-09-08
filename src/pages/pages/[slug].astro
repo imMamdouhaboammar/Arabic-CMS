@@ -7,7 +7,7 @@ import { createPublicQueryErrorResponse } from "../../utils/public-query-error.j
 const slug = decodeSlug(Astro.params.slug);
 
 if (!slug) {
-	return Astro.redirect("/404");
+	return Astro.rewrite("/404");
 }
 
 const { entry: page, cacheHint, error: pageError } = await getEmDashEntry("pages", slug);
@@ -17,7 +17,7 @@ if (pageError) {
 }
 
 if (!page) {
-	return Astro.redirect("/404");
+	return Astro.rewrite("/404");
 }
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);

@@ -14,7 +14,7 @@ const slug = decodeSlug(Astro.params.slug);
 const term = slug ? await getTerm("tag", slug) : null;
 
 if (!term) {
-	return Astro.redirect("/404");
+	return Astro.rewrite("/404");
 }
 
 const { entries: posts, cacheHint, error: postsError } = await getEmDashCollection("posts", {

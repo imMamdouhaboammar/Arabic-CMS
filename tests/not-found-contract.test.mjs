@@ -1,11 +1,32 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { once } from "node:events";
+import { createServer } from "node:net";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const read = (path) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
+
+async function getAvailablePort() {
+  const probe = createServer();
+  probe.listen(0, "127.0.0.1");
+  await once(probe, "listening");
+
+  const address = probe.address();
+  assert.ok(address && typeof address === "object");
+
+  const port = address.port;
+  await new Promise((resolve, reject) => {
+    probe.close((error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+
+  return port;
+}
 
 const DYNAMIC_PUBLIC_ROUTES = [
   {
@@ -86,7 +107,7 @@ test(
   "Astro rewrite to /404 returns HTTP 404 in place",
   { timeout: 30_000 },
   async () => {
-    const port = 3187;
+    const port = await getAvailablePort();
     const origin = `http://127.0.0.1:${port}`;
     const fixtureRoot = fileURLToPath(
       new URL("./fixtures/not-found-runtime/", import.meta.url),

@@ -27,7 +27,7 @@ test("both public JSON-LD script sinks use the shared safe serializer", async ()
   ]);
 
   for (const source of [base, article]) {
-    assert.match(source, /serializeJsonLd/);
-    assert.doesNotMatch(source, /set:html=\{JSON\.stringify\(/);
+    assert.match(source, /set:html\s*=\s*\{serializeJsonLd\(\s*\{/);
+    assert.doesNotMatch(source, /set:html\s*=\s*\{JSON\.stringify\(/);
   }
 });

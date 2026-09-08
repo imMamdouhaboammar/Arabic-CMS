@@ -12,7 +12,8 @@
     "build": "astro build",
     "preview": "astro preview --port 3000 --host 0.0.0.0",
     "start": "HOST=0.0.0.0 PORT=3000 node ./dist/server/entry.mjs",
-    "typecheck": "astro check"
+    "typecheck": "astro check",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^11.0.0",

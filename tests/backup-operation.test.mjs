@@ -34,6 +34,13 @@ const runBackup = (args, cwd) =>
     child.stdout.on("data", (chunk) => (stdout += chunk));
     child.stderr.on("data", (chunk) => (stderr += chunk));
     child.on("close", (code) => resolve({ code, stdout, stderr }));
+    child.on("error", (error) =>
+      resolve({
+        code: 1,
+        stdout,
+        stderr: `${stderr}${error.stack ?? error.message}`,
+      }),
+    );
   });
 
 const createFixture = async () => {

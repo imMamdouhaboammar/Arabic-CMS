@@ -17,15 +17,23 @@ const PUBLIC_POST_COLLECTION_ROUTES = [
 for (const path of PUBLIC_POST_COLLECTION_ROUTES) {
   test(`${path} queries only published posts`, async () => {
     const source = await read(path);
-    const collectionCall = source.match(
-      /getEmDashCollection\("posts",\s*\{([\s\S]*?)\n\s*\}\),?/,
+    const collectionCalls = [
+      ...source.matchAll(
+        /getEmDashCollection\(\s*["']posts["']\s*,\s*\{([\s\S]*?)\}\s*\)/g,
+      ),
+    ];
+
+    assert.ok(
+      collectionCalls.length > 0,
+      `expected at least one posts collection query in ${path}`,
     );
 
-    assert.ok(collectionCall, `expected a posts collection query in ${path}`);
-    assert.match(
-      collectionCall[1],
-      /status:\s*"published"/,
-      `public posts query in ${path} must explicitly filter published content`,
-    );
+    for (const [, options] of collectionCalls) {
+      assert.match(
+        options,
+        /status\s*:\s*["']published["']/,
+        `every public posts query in ${path} must explicitly filter published content`,
+      );
+    }
   });
 }

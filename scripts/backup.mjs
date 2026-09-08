@@ -10,7 +10,7 @@ import {
   rename,
   rm,
 } from "node:fs/promises";
-import { isAbsolute, join, parse, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 const DEFAULTS = {
@@ -136,6 +136,61 @@ async function assertNoSymlinkComponents(path, label) {
   }
 }
 
+async function findNearestExistingDirectory(path) {
+  let current = resolve(path);
+
+  while (true) {
+    const info = await lstat(current).catch((error) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
+
+    if (info) {
+      if (info.isSymbolicLink()) {
+        throw new Error(
+          `Backup output ancestor must not be a symbolic link: ${current}`,
+        );
+      }
+      if (!info.isDirectory()) {
+        throw new Error(
+          `Backup output ancestor must be a directory: ${current}`,
+        );
+      }
+      return current;
+    }
+
+    const parent = dirname(current);
+    if (parent === current) {
+      throw new Error("Could not find an existing backup output ancestor");
+    }
+    current = parent;
+  }
+}
+
+async function syncCreatedOutputChain(outputRoot, existingAncestor) {
+  const directories = [];
+  let current = outputRoot;
+
+  while (current !== existingAncestor) {
+    directories.push(current);
+    const parent = dirname(current);
+    if (parent === current) {
+      throw new Error(
+        "Backup output path escaped its existing ancestor during synchronization",
+      );
+    }
+    current = parent;
+  }
+
+  for (const directory of directories) {
+    await syncDirectory(directory, `new backup output directory ${directory}`);
+  }
+  await syncDirectory(
+    existingAncestor,
+    `existing backup output ancestor ${existingAncestor}`,
+  );
+}
+
 async function prepareOutputRoot(outputRoot) {
   const existing = await lstat(outputRoot).catch((error) => {
     if (error.code === "ENOENT") return null;
@@ -143,7 +198,11 @@ async function prepareOutputRoot(outputRoot) {
   });
 
   if (!existing) {
+    const existingAncestor = await findNearestExistingDirectory(
+      dirname(outputRoot),
+    );
     await mkdir(outputRoot, { recursive: true, mode: 0o700 });
+    await syncCreatedOutputChain(outputRoot, existingAncestor);
     return;
   }
 

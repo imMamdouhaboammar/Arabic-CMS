@@ -528,29 +528,6 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 
-			/* Lightweight search entry point */
-			.search-link {
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				gap: var(--spacing-2);
-				min-height: 44px;
-				padding: var(--spacing-2) var(--spacing-3);
-				border-radius: var(--radius);
-				color: var(--color-text-secondary);
-				text-decoration: none;
-				font-size: var(--font-size-sm);
-			}
-
-			.search-link:hover {
-				color: var(--color-text);
-				background: var(--color-bg-subtle);
-			}
-
-			.search-link svg {
-				flex: 0 0 auto;
-			}
-
 			main {
 				min-height: calc(100vh - var(--nav-height) - 300px);
 			}
@@ -683,8 +660,8 @@ const isLoggedIn = !!Astro.locals.user;
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				width: 44px;
-				height: 44px;
+				width: 32px;
+				height: 28px;
 				background: transparent;
 				border: none;
 				color: var(--color-muted);
@@ -750,10 +727,6 @@ const isLoggedIn = !!Astro.locals.user;
 					row-gap: var(--spacing-2);
 				}
 
-				.search-link {
-					grid-column: 1;
-					justify-self: start;
-				}
 
 				.nav-links {
 					grid-column: 1;

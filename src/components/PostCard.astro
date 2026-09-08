@@ -32,6 +32,7 @@ const formattedDate = date
 			day: "numeric",
 		})
 	: null;
+const dateIso = date?.toISOString() ?? null;
 ---
 
 <article class="post-card">
@@ -58,6 +59,8 @@ const formattedDate = date
 												src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
 												alt={credit.byline.displayName}
 												class="card-byline-avatar"
+												loading="lazy"
+												decoding="async"
 											/>
 										)}
 										<span class="card-byline-name">
@@ -86,7 +89,7 @@ const formattedDate = date
 						</>
 					)
 				}
-				{formattedDate && <time>{formattedDate}</time>}
+				{formattedDate && dateIso && <time datetime={dateIso}>{formattedDate}</time>}
 				{formattedDate && readingTime && <span class="meta-dot" />}
 				{readingTime && <span>{formatReadingTime(readingTime)}</span>}
 			</div>
@@ -250,7 +253,7 @@ const formattedDate = date
 		position: relative;
 		font-size: var(--font-size-xs);
 		color: var(--color-muted);
-		margin-left: 2px;
+		margin-inline-start: 2px;
 		cursor: default;
 		border-radius: var(--radius);
 		outline-offset: 2px;

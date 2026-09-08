@@ -1,5 +1,5 @@
 ---
-import { getMenu, getEmDashCollection, getSiteSettings } from "emdash";
+import { getEmDashCollection, getMenu, getSiteSettings } from "emdash";
 import {
 	WidgetArea,
 	EmDashHead,
@@ -7,7 +7,6 @@ import {
 	EmDashBodyEnd,
 } from "emdash/ui";
 import { createPublicPageContext } from "emdash/page";
-import LiveSearch from "emdash/ui/search";
 import { Font } from "astro:assets";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 import "../styles/tokens.css";
@@ -41,20 +40,15 @@ const {
 	author,
 	content,
 } = Astro.props;
-const { siteTitle, siteTagline, siteLogo } = resolveBlogSiteIdentity(await getSiteSettings());
-// If title already includes site title (from getSeoMeta), use as-is
-const fullTitle = title.includes(siteTitle) ? title : `${title} — ${siteTitle}`;
-
-// Fetch primary menu defined in seed
-const menu = await getMenu("primary");
-
-// Optional "social" menu. If a site defines a `social` menu in its seed,
-// it'll render in the footer's "Connect" column. Otherwise that column
-// just shows RSS, avoiding duplication with the "Navigate" column above.
-const socialMenu = await getMenu("social");
-
-// Fetch pages for footer
-const { entries: pages } = await getEmDashCollection("pages");
+// Site identity and the primary navigation are independent, so fetch them together.
+const [siteSettings, menu, { entries: pages }] = await Promise.all([
+	getSiteSettings(),
+	getMenu("primary"),
+	getEmDashCollection("pages"),
+]);
+const { siteTitle, siteTagline, siteLogo } = resolveBlogSiteIdentity(siteSettings);
+// If title already includes site title (from getSeoMeta), use as-is.
+const fullTitle = title.includes(siteTitle) ? title : `${title} | ${siteTitle}`;
 
 // Build public page context for plugin contributions
 // SEO data is passed here and rendered securely by EmDashHead
@@ -123,18 +117,21 @@ const isLoggedIn = !!Astro.locals.user;
 					}
 				</a>
 				<div class="nav-right">
-					<LiveSearch
-						placeholder="بحث في المقالات..."
-						class="site-search"
-						inputClass="site-search-input"
-						resultsClass="site-search-results"
-						resultClass="site-search-result"
-						collections={["posts", "pages"]}
-					/>
+					<a href="/search" class="search-link" aria-label="البحث في الموقع">
+						<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+							<circle cx="11" cy="11" r="7"></circle>
+							<path d="m20 20-3.5-3.5"></path>
+						</svg>
+						<span>بحث</span>
+					</a>
 					<div class="nav-links">
 						{
 							menu?.items.map((item) => (
-								<a href={item.url} target={item.target}>
+								<a
+									href={item.url}
+									target={item.target}
+									rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
+								>
 									{item.label}
 								</a>
 							))
@@ -168,10 +165,21 @@ const isLoggedIn = !!Astro.locals.user;
 						<p class="footer-tagline">{siteTagline}</p>
 					</div>
 					<div class="footer-nav">
-						<h4 class="footer-heading">التنقل</h4>
+						<h2 class="footer-heading">التنقل</h2>
 						<ul class="footer-links">
-							<li><a href="/">الرئيسية</a></li>
-							<li><a href="/posts">جميع المقالات</a></li>
+							{
+								menu?.items.slice(0, 4).map((item) => (
+									<li>
+										<a
+											href={item.url}
+											target={item.target}
+											rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
+										>
+											{item.label}
+										</a>
+									</li>
+								))
+							}
 							{
 								pages.slice(0, 3).map((page) => (
 									<li>
@@ -184,25 +192,8 @@ const isLoggedIn = !!Astro.locals.user;
 						</ul>
 					</div>
 					<div class="footer-nav">
-						<h4 class="footer-heading">الموجز والتحديثات</h4>
+						<h2 class="footer-heading">الموجز</h2>
 						<ul class="footer-links">
-							{
-								socialMenu?.items.map((item) => (
-									<li>
-										<a
-											href={item.url}
-											target={item.target}
-											rel={
-												item.target === "_blank"
-													? "noopener noreferrer"
-													: undefined
-											}
-										>
-											{item.label}
-										</a>
-									</li>
-								))
-							}
 							<li><a href="/rss.xml">موجز RSS</a></li>
 						</ul>
 					</div>
@@ -220,6 +211,7 @@ const isLoggedIn = !!Astro.locals.user;
 							class="theme-btn"
 							data-theme="light"
 							aria-label="الوضع الفاتح"
+							aria-pressed="false"
 						>
 							<svg
 								width="16"
@@ -251,6 +243,7 @@ const isLoggedIn = !!Astro.locals.user;
 							class="theme-btn"
 							data-theme="dark"
 							aria-label="الوضع الداكن"
+							aria-pressed="false"
 						>
 							<svg
 								width="16"
@@ -270,6 +263,7 @@ const isLoggedIn = !!Astro.locals.user;
 							class="theme-btn"
 							data-theme="system"
 							aria-label="تلقائي حسب النظام"
+							aria-pressed="false"
 						>
 							<svg
 								width="16"
@@ -327,7 +321,9 @@ const isLoggedIn = !!Astro.locals.user;
 
 			function updateActiveBtn(theme: string) {
 				themeBtns.forEach((btn) => {
-					btn.classList.toggle("active", btn.dataset.theme === theme);
+					const active = btn.dataset.theme === theme;
+					btn.classList.toggle("active", active);
+					btn.setAttribute("aria-pressed", String(active));
 				});
 			}
 
@@ -531,108 +527,6 @@ const isLoggedIn = !!Astro.locals.user;
 				color: var(--color-text);
 			}
 
-			/* Search styling */
-			.site-search {
-				position: relative;
-				width: var(--search-input-width);
-				--emdash-search-border-focus: var(--color-brand);
-			}
-
-			:global(.site-search-input) {
-				width: var(--search-input-width);
-				padding: var(--spacing-2) var(--spacing-3);
-				font-family: var(--font-body);
-				font-size: var(--font-size-sm);
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius);
-				background: var(--color-bg);
-				color: var(--color-text);
-				transition:
-					border-color var(--transition-fast),
-					box-shadow var(--transition-fast);
-			}
-
-			:global(.site-search-input)::placeholder {
-				color: var(--color-muted);
-			}
-
-			:global(.site-search-input):focus,
-			:global(.site-search-input):focus-visible {
-				outline: none;
-				border-color: var(--color-brand) !important;
-				box-shadow: 0 0 0 3px var(--color-brand-ring);
-			}
-
-			:global(.site-search-results) {
-				position: absolute;
-				top: 100%;
-				left: 0;
-				right: 0;
-				margin-top: var(--spacing-2);
-				background: var(--color-bg);
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius-lg);
-				box-shadow: var(--shadow-lg);
-				max-height: 400px;
-				overflow-y: auto;
-				z-index: 1000;
-			}
-
-			:global(.site-search-results .emdash-live-search-loading),
-			:global(.site-search-results .emdash-live-search-no-results) {
-				padding: var(--spacing-4);
-				text-align: center;
-				color: var(--color-muted);
-				font-size: var(--font-size-sm);
-			}
-
-			:global(.site-search-result) {
-				display: block;
-				padding: var(--spacing-3) var(--spacing-4);
-				text-decoration: none;
-				color: var(--color-text);
-				border-bottom: 1px solid var(--color-border-subtle);
-				transition: background var(--transition-fast);
-			}
-
-			:global(.site-search-result):last-child {
-				border-bottom: none;
-			}
-
-			:global(.site-search-result):hover,
-			:global(.site-search-result):focus,
-			:global(.site-search-result.focused) {
-				background: var(--color-surface);
-				outline: none;
-			}
-
-			:global(.site-search-result .emdash-live-search-result-title) {
-				display: block;
-				font-weight: 500;
-				font-size: var(--font-size-sm);
-			}
-
-			:global(.site-search-result .emdash-live-search-result-collection) {
-				display: block;
-				font-size: var(--font-size-xs);
-				color: var(--color-muted);
-				text-transform: uppercase;
-				letter-spacing: var(--tracking-wide);
-				margin-top: 2px;
-			}
-
-			:global(.site-search-result .emdash-live-search-result-snippet) {
-				display: block;
-				font-size: var(--font-size-sm);
-				color: var(--color-muted);
-				margin-top: var(--spacing-1);
-				line-height: var(--leading-snug);
-			}
-
-			:global(.site-search-result .emdash-live-search-result-snippet mark) {
-				font-weight: 600;
-				color: var(--color-text);
-			}
 
 			main {
 				min-height: calc(100vh - var(--nav-height) - 300px);
@@ -833,17 +727,6 @@ const isLoggedIn = !!Astro.locals.user;
 					row-gap: var(--spacing-2);
 				}
 
-				.site-search {
-					grid-column: 1;
-					width: 100%;
-					max-width: none;
-				}
-
-				:global(.site-search-input) {
-					width: 100% !important;
-					padding: var(--spacing-1) var(--spacing-2) !important;
-					font-size: var(--font-size-sm) !important;
-				}
 
 				.nav-links {
 					grid-column: 1;
@@ -884,20 +767,6 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 		</style>
 
-		<script>
-			// ⌘K / Ctrl+K to focus search
-			document.addEventListener("keydown", (e) => {
-				if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-					e.preventDefault();
-					const searchInput = document.querySelector(
-						".site-search-input"
-					) as HTMLInputElement;
-					if (searchInput) {
-						searchInput.focus();
-					}
-				}
-			});
-		</script>
 		<EmDashBodyEnd page={pageCtx} />
 	</body>
 </html>

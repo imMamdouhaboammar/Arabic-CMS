@@ -30,7 +30,6 @@ const { items: results } = query
 				placeholder="ابحث في المقالات..."
 				class="search-input"
 				aria-label="عبارة البحث"
-				autofocus
 			/>
 			<button type="submit" class="search-button">بحث</button>
 		</form>
@@ -91,6 +90,8 @@ const { items: results } = query
 
 	.search-input {
 		flex: 1;
+		min-width: 0;
+		min-height: 44px;
 		padding: var(--spacing-2) var(--spacing-4);
 		font-size: var(--font-size-base);
 		border: 1px solid var(--color-border);
@@ -105,6 +106,7 @@ const { items: results } = query
 	}
 
 	.search-button {
+		min-height: 44px;
 		padding: var(--spacing-2) var(--spacing-6);
 		font-size: var(--font-size-base);
 		background: var(--color-brand);
@@ -179,5 +181,21 @@ const { items: results } = query
 		color: inherit;
 		padding: 0 0.1em;
 		border-radius: 2px;
+	}
+</style>
+
+<style>
+	@media (max-width: 420px) {
+		.search-page {
+			padding-inline: var(--spacing-4);
+		}
+
+		.search-form {
+			flex-direction: column;
+		}
+
+		.search-button {
+			width: 100%;
+		}
 	}
 </style>

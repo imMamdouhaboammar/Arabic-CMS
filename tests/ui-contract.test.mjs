@@ -1,0 +1,109 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const read = (path) =>
+  readFile(new URL(`../${path}`, import.meta.url), "utf8");
+
+test("public reading shell uses the lightweight search route", async () => {
+  const base = await read("src/layouts/Base.astro");
+  assert.doesNotMatch(base, /LiveSearch/);
+  assert.match(base, /href="\/search"/);
+});
+
+test("article reading path does not ship comments without moderation", async () => {
+  const article = await read("src/pages/posts/[slug].astro");
+  assert.doesNotMatch(article, /CommentForm|<Comments/);
+});
+
+test("mobile featured image clears logical start overflow", async () => {
+  const home = await read("src/pages/index.astro");
+  assert.match(home, /margin-inline-start:\s*0;/);
+});
+
+test("motion and theme controls expose accessibility safeguards", async () => {
+  const [theme, base] = await Promise.all([
+    read("src/styles/theme.css"),
+    read("src/layouts/Base.astro"),
+  ]);
+  assert.match(theme, /prefers-reduced-motion:\s*reduce/);
+  assert.match(theme, /\.theme-btn\s*\{[^}]*width:\s*44px;[^}]*height:\s*44px;/s);
+  assert.match(theme, /\.search-link\s*\{/);
+  assert.match(base, /aria-pressed="false"/);
+  assert.match(base, /setAttribute\("aria-pressed"/);
+});
+
+test("fresh CMS seed is Arabic-first and moderation-safe", async () => {
+  const seed = JSON.parse(await read("seed/seed.json"));
+  const posts = seed.collections.find((collection) => collection.slug === "posts");
+
+  assert.equal(seed.settings.title, "ممدوح أبو عمار");
+  assert.match(seed.settings.tagline, /هندسة البرمجيات/);
+  assert.equal(posts.commentsEnabled, false);
+  assert.equal(posts.label, "المقالات");
+  assert.equal(seed.menus[0].items[0].label, "الرئيسية");
+  assert.deepEqual(seed.sections, []);
+  assert.deepEqual(seed.content.posts, []);
+  assert.deepEqual(seed.content.pages, []);
+});
+
+test("narrow reading surfaces use logical spacing and resilient controls", async () => {
+  const [cards, posts, search] = await Promise.all([
+    read("src/components/PostCard.astro"),
+    read("src/pages/posts/index.astro"),
+    read("src/pages/search.astro"),
+  ]);
+
+  assert.match(cards, /margin-inline-start:\s*2px;/);
+  assert.match(posts, /\.post-meta\s*\{[^}]*flex-wrap:\s*wrap;/s);
+  assert.match(search, /\.search-input\s*\{[^}]*min-height:\s*44px;/s);
+  assert.match(search, /\.search-button\s*\{[^}]*min-height:\s*44px;/s);
+});
+
+test("Astro and EmDash default fresh content to Arabic", async () => {
+  const config = await read("astro.config.mjs");
+
+  assert.match(config, /defaultLocale:\s*"ar"/);
+  assert.match(config, /locales:\s*\["ar"\]/);
+  assert.match(config, /scripts:\s*\["arabic"\]/);
+});
+
+test("public shell preserves CMS pages without sequential queries", async () => {
+  const base = await read("src/layouts/Base.astro");
+
+  assert.match(base, /getEmDashCollection/);
+  assert.doesNotMatch(base, /getMenu\("social"\)/);
+  assert.match(
+    base,
+    /Promise\.all\(\[\s*getSiteSettings\(\),\s*getMenu\("primary"\),\s*getEmDashCollection\("pages"\),?\s*\]\)/s,
+  );
+  assert.match(base, /pages\.slice\(0, 3\)\.map/);
+  assert.doesNotMatch(base, /<h4 class="footer-heading">/);
+});
+
+test("long-form reading surfaces stay RTL-native and low-runtime", async () => {
+  const [page, article] = await Promise.all([
+    read("src/pages/pages/[slug].astro"),
+    read("src/pages/posts/[slug].astro"),
+  ]);
+
+  assert.doesNotMatch(page, /padding-left|border-left/);
+  assert.match(page, /padding-inline-start/);
+  assert.match(page, /border-inline-start/);
+  assert.doesNotMatch(article, /IntersectionObserver/);
+  assert.match(article, /overflow-wrap:\s*anywhere/);
+});
+
+test("published dates expose machine-readable datetime values", async () => {
+  const [card, posts, article] = await Promise.all([
+    read("src/components/PostCard.astro"),
+    read("src/pages/posts/index.astro"),
+    read("src/pages/posts/[slug].astro"),
+  ]);
+
+  assert.match(card, /const dateIso = date\?\.toISOString\(\) \?\? null/);
+  assert.match(card, /datetime=\{dateIso\}/);
+  assert.match(posts, /datetime=\{post\.data\.publishedAt\.toISOString\(\)\}/);
+  assert.match(article, /const publishedAtIso = post\.data\.publishedAt\?\.toISOString\(\) \?\? null/);
+  assert.match(article, /datetime=\{publishedAtIso\}/);
+});

@@ -86,7 +86,7 @@ const articleCountText =
 										</>
 									)}
 									{post.data.publishedAt && (
-										<time>{formatDate(post.data.publishedAt)}</time>
+										<time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time>
 									)}
 									{post.data.publishedAt && <span class="meta-dot" />}
 									<span>{formatReadingTime(getReadingTime(post.data.content))}</span>
@@ -168,7 +168,9 @@ const articleCountText =
 	.post-meta {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-3);
+		flex-wrap: wrap;
+		column-gap: var(--spacing-3);
+		row-gap: var(--spacing-1);
 		font-size: var(--font-size-sm);
 		color: var(--color-muted);
 		margin-bottom: var(--spacing-2);

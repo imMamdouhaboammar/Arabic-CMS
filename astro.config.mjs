@@ -6,6 +6,10 @@ import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
 
 export default defineConfig({
+	i18n: {
+		defaultLocale: "ar",
+		locales: ["ar"],
+	},
 	output: "server",
 	adapter: node({
 		mode: "standalone",
@@ -21,6 +25,9 @@ export default defineConfig({
 	integrations: [
 		react(),
 		emdash({
+			fonts: {
+				scripts: ["arabic"],
+			},
 			database: sqlite({ url: "file:./data.db" }),
 			storage: local({
 				directory: "./uploads",

@@ -58,6 +58,8 @@ const formattedDate = date
 												src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
 												alt={credit.byline.displayName}
 												class="card-byline-avatar"
+												loading="lazy"
+												decoding="async"
 											/>
 										)}
 										<span class="card-byline-name">
@@ -250,7 +252,7 @@ const formattedDate = date
 		position: relative;
 		font-size: var(--font-size-xs);
 		color: var(--color-muted);
-		margin-left: 2px;
+		margin-inline-start: 2px;
 		cursor: default;
 		border-radius: var(--radius);
 		outline-offset: 2px;

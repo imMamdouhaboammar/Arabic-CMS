@@ -16,5 +16,5 @@ test("Quality workflow grants only read access to repository contents", async ()
   const permissions = permissionsMatch[1];
   assert.match(permissions, /^\s+contents:\s*read\s*$/m);
   assert.doesNotMatch(permissions, /:\s*write\s*$/m);
-  assert.doesNotMatch(workflow, /^\s+permissions:\s*write-all\s*$/m);
+  assert.doesNotMatch(workflow, /^\s*permissions:\s*write-all\s*$/m);
 });

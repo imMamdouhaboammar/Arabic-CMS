@@ -1,107 +1,78 @@
-# Instincts generated from https://github.com/imMamdouhaboammar/Arabic-CMS
-# Generated: 2026-09-08T11:05:46.898Z
-# Version: 2.0
-# NOTE: This file supplements (does not replace) any existing curated instincts.
-# High-confidence manually curated instincts should be preserved alongside these.
+# Curated instincts for imMamdouhaboammar/Arabic-CMS
+# Reviewed after the initial ECC repository analysis.
+# These supplement, and never override, the root AGENTS.md.
+
+---
+id: Arabic-CMS-astro-emdash
+trigger: "when changing application architecture or CMS routes"
+confidence: 0.95
+domain: architecture
+source: curated-review
+source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
+---
+
+# Preserve Astro and EmDash Architecture
+
+## Action
+
+Keep CMS content routes server-rendered in Astro, preserve EmDash query/cache semantics, and treat React as an optional integration rather than the public-site framework.
+
+---
+id: Arabic-CMS-relative-imports
+trigger: "when adding a local source import"
+confidence: 0.95
+domain: code-style
+source: curated-review
+source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
+---
+
+# Use Relative Local Imports
+
+## Action
+
+Use relative imports for repository source files unless a validated TypeScript/Astro path alias is explicitly added.
+
+---
+id: Arabic-CMS-rtl-logical-css
+trigger: "when editing layout or visual CSS"
+confidence: 0.95
+domain: accessibility
+source: curated-review
+source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
+---
+
+# Preserve Arabic RTL Semantics
+
+## Action
+
+Prefer CSS logical properties, maintain Arabic RTL reading behavior, and isolate LTR technical content such as code and URLs.
+
+---
+id: Arabic-CMS-quality-gate
+trigger: "before declaring a repository change ready to merge"
+confidence: 0.95
+domain: testing
+source: curated-review
+source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
+---
+
+# Run the Quality Gate
+
+## Action
+
+Run npm test, npm run typecheck, and npm run build. Treat failures as blockers unless proven unrelated and explicitly documented.
 
 ---
 id: Arabic-CMS-commit-conventional
 trigger: "when writing a commit message"
-confidence: 0.85
+confidence: 0.9
 domain: git
-source: repo-analysis
+source: curated-review
 source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
 ---
 
-# Arabic CMS Commit Conventional
+# Use Conventional Commits
 
 ## Action
 
-Use conventional commit format with prefixes: test, ci
-
-## Evidence
-
-- 3 commits analyzed
-- Detected conventional commit pattern
-- Examples: test: add UI quality contract runner, ci: verify UI contracts typecheck and build
-
----
-id: Arabic-CMS-commit-length
-trigger: "when writing a commit message"
-confidence: 0.6
-domain: git
-source: repo-analysis
-source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
----
-
-# Arabic CMS Commit Length
-
-## Action
-
-Keep commit messages concise (~40 characters)
-
-## Evidence
-
-- Average commit message length: 40 chars
-- Based on 3 commits
-
----
-id: Arabic-CMS-naming-files
-trigger: "when creating a new file"
-confidence: 0.8
-domain: code-style
-source: repo-analysis
-source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
----
-
-# Arabic CMS Naming Files
-
-## Action
-
-Use camelCase naming convention
-
-## Evidence
-
-- Analyzed file naming patterns in repository
-- Dominant pattern: camelCase
-
----
-id: Arabic-CMS-export-style
-trigger: "when exporting from a module"
-confidence: 0.7
-domain: code-style
-source: repo-analysis
-source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
----
-
-# Arabic CMS Export Style
-
-## Action
-
-Prefer named exports
-
-## Evidence
-
-- Export pattern analysis
-- Dominant style: named
-
----
-id: Arabic-CMS-test-separate
-trigger: "when writing tests"
-confidence: 0.8
-domain: testing
-source: repo-analysis
-source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
----
-
-# Arabic CMS Test Separate
-
-## Action
-
-Place tests in the tests/ or __tests__/ directory, mirroring src structure
-
-## Evidence
-
-- Separate test directory pattern detected
-- Tests live in dedicated test folders
-
+Use concise conventional commit prefixes that match the actual change, such as feat, fix, test, ci, perf, a11y, i18n, content, docs, or chore.

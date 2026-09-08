@@ -8,6 +8,7 @@ import {
 import Base from "../../layouts/Base.astro";
 import PostCard from "../../components/PostCard.astro";
 import { getReadingTime } from "../../utils/reading-time";
+import { createPublicQueryErrorResponse } from "../../utils/public-query-error.js";
 
 const slug = decodeSlug(Astro.params.slug);
 const term = slug ? await getTerm("tag", slug) : null;
@@ -16,11 +17,15 @@ if (!term) {
 	return Astro.redirect("/404");
 }
 
-const { entries: posts, cacheHint } = await getEmDashCollection("posts", {
+const { entries: posts, cacheHint, error: postsError } = await getEmDashCollection("posts", {
 	status: "published",
 	where: { tag: term.slug },
 	orderBy: { published_at: "desc" },
 });
+
+if (postsError) {
+	return createPublicQueryErrorResponse("tag:posts", postsError);
+}
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 

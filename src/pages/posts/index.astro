@@ -2,12 +2,17 @@
 import { getEmDashCollection, getTermsForEntries } from "emdash";
 import Base from "../../layouts/Base.astro";
 import { getReadingTime, formatReadingTime } from "../../utils/reading-time";
+import { createPublicQueryErrorResponse } from "../../utils/public-query-error.js";
 
 // Sort in the database rather than in JS
-const { entries: posts, cacheHint } = await getEmDashCollection("posts", {
+const { entries: posts, cacheHint, error: postsError } = await getEmDashCollection("posts", {
 	status: "published",
 	orderBy: { published_at: "desc" },
 });
+
+if (postsError) {
+	return createPublicQueryErrorResponse("posts:index", postsError);
+}
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 

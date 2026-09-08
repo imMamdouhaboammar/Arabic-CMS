@@ -82,6 +82,8 @@ test("backup command creates one complete integrity-checkable recovery set witho
     assert.equal(entries.filter((name) => name.startsWith(".partial-")).length, 0);
     assert.equal(entries.length, 1);
 
+    assert.match(entries[0], /^backup-\d{8}T\d{9}Z-[0-9a-f]{8}$/);
+
     const setRoot = join(fixture.outputPath, entries[0]);
     const manifest = JSON.parse(await readFile(join(setRoot, "manifest.json"), "utf8"));
 
@@ -90,6 +92,9 @@ test("backup command creates one complete integrity-checkable recovery set witho
     assert.equal(manifest.state, "complete");
     assert.equal(manifest.database.path, "data.db");
     assert.equal(manifest.media.path, "uploads");
+    assert.equal(manifest.application.packageVersion, "0.0.3");
+    assert.ok(Object.hasOwn(manifest.application, "commit"));
+    assert.match(manifest.application.nodeVersion, /^v22\./);
     assert.ok(Array.isArray(manifest.files));
 
     const expectedPaths = [
@@ -180,13 +185,11 @@ test("failed media capture exits non-zero and cannot leave a partial set looking
     assert.match(result.stderr, /symbolic link|symlink/i);
 
     const entries = await readdir(fixture.outputPath).catch(() => []);
-    assert.equal(entries.filter((name) => !name.startsWith(".partial-")).length, 0);
-
-    for (const name of entries) {
-      const stat = await lstat(join(fixture.outputPath, name));
-      assert.equal(stat.isDirectory(), true);
-      assert.match(name, /^\.partial-/);
-    }
+    assert.deepEqual(
+      entries,
+      [],
+      "handled capture failures must clean their partial staging directory",
+    );
   } finally {
     await rm(fixture.root, { recursive: true, force: true });
   }

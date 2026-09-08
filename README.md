@@ -42,6 +42,10 @@ A clean, minimal blog built with [EmDash](https://github.com/emdash-cms/emdash).
 - **Storage:** Local filesystem
 - **Framework:** Astro with `@astrojs/node`
 
+### Backup and recovery
+
+SQLite content and local media are persistent runtime state and must be recovered together. See the [backup and restore contract](docs/backup-and-restore.md) before creating backup automation or restoring CMS data.
+
 ## Getting Started
 
 ```bash

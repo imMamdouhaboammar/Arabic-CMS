@@ -10,6 +10,7 @@ import { createPublicPageContext } from "emdash/page";
 import { Font } from "astro:assets";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 import { serializeJsonLd } from "../utils/json-ld.js";
+import { throwPublicQueryError } from "../utils/public-query-error.js";
 import "../styles/tokens.css";
 import "../styles/theme.css";
 
@@ -42,11 +43,16 @@ const {
 	content,
 } = Astro.props;
 // Site identity and the primary navigation are independent, so fetch them together.
-const [siteSettings, menu, { entries: pages }] = await Promise.all([
+const [siteSettings, menu, { entries: pages, error: pagesError }] = await Promise.all([
 	getSiteSettings(),
 	getMenu("primary"),
 	getEmDashCollection("pages"),
 ]);
+
+if (pagesError) {
+	throwPublicQueryError("layout:pages", pagesError);
+}
+
 const { siteTitle, siteTagline, siteLogo } = resolveBlogSiteIdentity(siteSettings);
 // If title already includes site title (from getSeoMeta), use as-is.
 const fullTitle = title.includes(siteTitle) ? title : `${title} | ${siteTitle}`;

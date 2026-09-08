@@ -2,16 +2,21 @@ import type { APIRoute } from "astro";
 import { getEmDashCollection, getSiteSettings } from "emdash";
 
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
+import { createPublicQueryErrorResponse } from "../utils/public-query-error.js";
 
 export const GET: APIRoute = async ({ site, url }) => {
 	const siteUrl = site?.toString() || url.origin;
 	const { siteTitle, siteTagline } = resolveBlogSiteIdentity(await getSiteSettings());
 
-	const { entries: posts } = await getEmDashCollection("posts", {
+	const { entries: posts, error: postsError } = await getEmDashCollection("posts", {
 		status: "published",
 		orderBy: { published_at: "desc" },
 		limit: 20,
 	});
+
+	if (postsError) {
+		return createPublicQueryErrorResponse("rss:posts", postsError);
+	}
 
 	const items = posts
 		.map((post) => {

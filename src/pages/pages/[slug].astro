@@ -2,6 +2,7 @@
 import { getEmDashEntry, decodeSlug } from "emdash";
 import { PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
+import { createPublicQueryErrorResponse } from "../../utils/public-query-error.js";
 
 const slug = decodeSlug(Astro.params.slug);
 
@@ -9,7 +10,11 @@ if (!slug) {
 	return Astro.redirect("/404");
 }
 
-const { entry: page, cacheHint } = await getEmDashEntry("pages", slug);
+const { entry: page, cacheHint, error: pageError } = await getEmDashEntry("pages", slug);
+
+if (pageError) {
+	return createPublicQueryErrorResponse("pages:entry", pageError);
+}
 
 if (!page) {
 	return Astro.redirect("/404");

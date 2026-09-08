@@ -9,12 +9,13 @@ import Base from "../layouts/Base.astro";
 import PostCard from "../components/PostCard.astro";
 import { getReadingTime, formatReadingTime } from "../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
+import { createPublicQueryErrorResponse } from "../utils/public-query-error.js";
 
 // Limit to what we render (1 featured + 6 grid). The DB does the slicing
 // instead of fetching every post and discarding the tail in JS.
 const POSTS_PER_PAGE = 7;
 
-const [{ entries: posts, cacheHint }, settings] = await Promise.all([
+const [{ entries: posts, cacheHint, error: postsError }, settings] = await Promise.all([
 	getEmDashCollection("posts", {
 		status: "published",
 		orderBy: { published_at: "desc" },
@@ -22,6 +23,11 @@ const [{ entries: posts, cacheHint }, settings] = await Promise.all([
 	}),
 	getSiteSettings(),
 ]);
+
+if (postsError) {
+	return createPublicQueryErrorResponse("home:posts", postsError);
+}
+
 const { siteTitle, siteTagline } = resolveBlogSiteIdentity(settings);
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);

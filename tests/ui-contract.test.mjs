@@ -67,3 +67,15 @@ test("Astro and EmDash default fresh content to Arabic", async () => {
   assert.match(config, /locales:\s*\["ar"\]/);
   assert.match(config, /scripts:\s*\["arabic"\]/);
 });
+
+test("public shell avoids unnecessary sequential CMS queries", async () => {
+  const base = await read("src/layouts/Base.astro");
+
+  assert.doesNotMatch(base, /getEmDashCollection/);
+  assert.doesNotMatch(base, /getMenu\("social"\)/);
+  assert.match(
+    base,
+    /Promise\.all\(\[\s*getSiteSettings\(\),\s*getMenu\("primary"\),?\s*\]\)/s,
+  );
+  assert.doesNotMatch(base, /<h4 class="footer-heading">/);
+});

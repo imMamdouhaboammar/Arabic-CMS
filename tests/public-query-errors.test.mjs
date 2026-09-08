@@ -59,39 +59,39 @@ const responseBoundaries = [
   {
     path: "src/pages/index.astro",
     importPath: "../utils/public-query-error.js",
-    errorNames: ["postsError"],
+    errors: ["postsError"],
   },
   {
     path: "src/pages/posts/index.astro",
     importPath: "../../utils/public-query-error.js",
-    errorNames: ["postsError"],
+    errors: ["postsError"],
   },
   {
     path: "src/pages/posts/[slug].astro",
     importPath: "../../utils/public-query-error.js",
-    errorNames: ["postError", "recentPostsError"],
-    notFound: ["postError", "if (!post)"],
+    errors: ["postError", "recentPostsError"],
+    notFound: { error: "postError", entry: "post" },
   },
   {
     path: "src/pages/pages/[slug].astro",
     importPath: "../../utils/public-query-error.js",
-    errorNames: ["pageError"],
-    notFound: ["pageError", "if (!page)"],
+    errors: ["pageError"],
+    notFound: { error: "pageError", entry: "page" },
   },
   {
     path: "src/pages/category/[slug].astro",
     importPath: "../../utils/public-query-error.js",
-    errorNames: ["postsError"],
+    errors: ["postsError"],
   },
   {
     path: "src/pages/tag/[slug].astro",
     importPath: "../../utils/public-query-error.js",
-    errorNames: ["postsError"],
+    errors: ["postsError"],
   },
   {
     path: "src/pages/rss.xml.ts",
     importPath: "../utils/public-query-error.js",
-    errorNames: ["postsError"],
+    errors: ["postsError"],
   },
 ];
 
@@ -106,7 +106,7 @@ for (const contract of responseBoundaries) {
       ),
     );
 
-    for (const errorName of contract.errorNames) {
+    for (const errorName of contract.errors) {
       assert.match(
         source,
         new RegExp(`\\berror\\s*:\\s*${errorName}\\b`),
@@ -115,16 +115,30 @@ for (const contract of responseBoundaries) {
       assert.match(
         source,
         new RegExp(
-          `if\\s*\\(\\s*${errorName}\\s*\\)[\\s\\S]{0,180}return\\s+createPublicQueryErrorResponse\\(`,
+          `if\\s*\\(\\s*${errorName}\\s*\\)\\s*\\{\\s*return\\s+createPublicQueryErrorResponse\\(\\s*["'][^"']+["']\\s*,\\s*${errorName}\\s*\\)\\s*;?\\s*\\}`,
         ),
         `expected ${contract.path} to return a safe 500 for ${errorName}`,
       );
     }
 
     if (contract.notFound) {
-      const [errorName, notFoundMarker] = contract.notFound;
+      const errorPosition = source.search(
+        new RegExp(`if\\s*\\(\\s*${contract.notFound.error}\\s*\\)`),
+      );
+      const notFoundPosition = source.search(
+        new RegExp(`if\\s*\\(\\s*!${contract.notFound.entry}\\s*\\)`),
+      );
+
       assert.ok(
-        source.indexOf(`if (${errorName})`) < source.indexOf(notFoundMarker),
+        errorPosition >= 0,
+        `missing ${contract.notFound.error} guard in ${contract.path}`,
+      );
+      assert.ok(
+        notFoundPosition >= 0,
+        `missing not-found guard in ${contract.path}`,
+      );
+      assert.ok(
+        errorPosition < notFoundPosition,
         `expected ${contract.path} to handle query failure before not-found`,
       );
     }
@@ -141,7 +155,7 @@ test("shared Base layout fails closed when its pages collection query errors", a
   assert.match(source, /error\s*:\s*pagesError/);
   assert.match(
     source,
-    /if\s*\(\s*pagesError\s*\)[\s\S]{0,160}throwPublicQueryError\(/,
+    /if\s*\(\s*pagesError\s*\)\s*\{\s*throwPublicQueryError\(\s*["'][^"']+["']\s*,\s*pagesError\s*\)\s*;?\s*\}/,
   );
 });
 

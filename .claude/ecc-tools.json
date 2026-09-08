@@ -202,12 +202,12 @@
     {
       "moduleId": "runtime-core",
       "path": ".claude/identity.json",
-      "description": "Suggested identity.json baseline derived from repository conventions."
+      "description": "Suggested Claude identity baseline aligned with the Astro, EmDash, and Arabic RTL repository."
     },
     {
       "moduleId": "runtime-core",
       "path": ".codex/config.toml",
-      "description": "Repo-local Codex MCP and multi-agent baseline aligned with ECC defaults."
+      "description": "Repo-local Codex multi-agent baseline with no auto-downloaded third-party MCP servers."
     },
     {
       "moduleId": "runtime-core",
@@ -232,7 +232,7 @@
     {
       "moduleId": "runtime-core",
       "path": ".claude/homunculus/instincts/inherited/Arabic-CMS-instincts.yaml",
-      "description": "Continuous-learning instincts derived from repository patterns."
+      "description": "Curated repository instincts aligned with AGENTS.md and the verified Astro/EmDash architecture."
     }
   ],
   "workflows": [],

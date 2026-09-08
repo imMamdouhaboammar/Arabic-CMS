@@ -138,6 +138,36 @@ test("backup command creates one complete integrity-checkable recovery set witho
   }
 });
 
+test("backup command rejects a symlinked output parent before it can recurse into uploads", async () => {
+  const fixture = await createFixture();
+
+  try {
+    const alias = join(fixture.root, "output-alias");
+    await symlink(fixture.uploadsPath, alias);
+
+    const result = await runBackup(
+      [
+        "--source-db",
+        fixture.dbPath,
+        "--source-uploads",
+        fixture.uploadsPath,
+        "--output",
+        join(alias, "nested-backups"),
+        "--confirm-quiesced",
+      ],
+      fixture.root,
+    );
+
+    assert.notEqual(result.code, 0);
+    assert.match(result.stderr, /symbolic-link|symbolic link|inside the uploads/i);
+
+    const uploadEntries = await readdir(fixture.uploadsPath);
+    assert.equal(uploadEntries.includes("nested-backups"), false);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
 test("backup command refuses capture without explicit quiescence confirmation", async () => {
   const fixture = await createFixture();
 

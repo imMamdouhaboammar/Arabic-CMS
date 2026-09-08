@@ -1,16 +1,17 @@
 import { createHash, randomUUID } from "node:crypto";
+import { constants as fsConstants } from "node:fs";
 import {
-  copyFile,
   lstat,
   mkdir,
+  open,
   opendir,
   readFile,
+  realpath,
   rename,
   rm,
-  stat,
   writeFile,
 } from "node:fs/promises";
-import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 const DEFAULTS = {
@@ -113,6 +114,29 @@ function isInside(parent, candidate) {
   return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel));
 }
 
+async function assertNoSymlinkComponents(path, label) {
+  const absolute = resolve(path);
+  const { root } = parse(absolute);
+  const components = absolute
+    .slice(root.length)
+    .split(sep)
+    .filter(Boolean);
+  let current = root;
+
+  for (const component of components) {
+    current = join(current, component);
+    const info = await lstat(current).catch((error) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
+
+    if (!info) return;
+    if (info.isSymbolicLink()) {
+      throw new Error(`${label} must not contain symbolic-link components: ${current}`);
+    }
+  }
+}
+
 async function prepareOutputRoot(outputRoot) {
   const existing = await lstat(outputRoot).catch((error) => {
     if (error.code === "ENOENT") return null;
@@ -155,7 +179,104 @@ async function createDatabaseSnapshot(sourceDb, destinationDb) {
   }
 }
 
-async function copyUploads(source, destination, relativePath = "") {
+const NO_FOLLOW = fsConstants.O_NOFOLLOW ?? 0;
+const READ_FLAGS = fsConstants.O_RDONLY | NO_FOLLOW;
+const WRITE_NEW_FLAGS =
+  fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_EXCL;
+
+async function openRegularFileNoFollow(path, label) {
+  let handle;
+  try {
+    handle = await open(path, READ_FLAGS);
+  } catch (error) {
+    if (error.code === "ELOOP") {
+      throw new Error(`Refusing symbolic link: ${label}`);
+    }
+    throw error;
+  }
+
+  try {
+    const info = await handle.stat();
+    if (!info.isFile()) {
+      throw new Error(`Refusing non-regular file: ${label}`);
+    }
+    return { handle, info };
+  } catch (error) {
+    await handle.close().catch(() => {});
+    throw error;
+  }
+}
+
+async function copyRegularFileNoFollow(sourcePath, destinationPath, logicalPath) {
+  const { handle: sourceHandle } = await openRegularFileNoFollow(
+    sourcePath,
+    logicalPath,
+  );
+  let destinationHandle;
+
+  try {
+    destinationHandle = await open(destinationPath, WRITE_NEW_FLAGS, 0o600);
+    const buffer = Buffer.allocUnsafe(1024 * 1024);
+    let position = 0;
+
+    while (true) {
+      const { bytesRead } = await sourceHandle.read(
+        buffer,
+        0,
+        buffer.length,
+        position,
+      );
+      if (bytesRead === 0) break;
+
+      let written = 0;
+      while (written < bytesRead) {
+        const result = await destinationHandle.write(
+          buffer,
+          written,
+          bytesRead - written,
+          position + written,
+        );
+        written += result.bytesWritten;
+      }
+      position += bytesRead;
+    }
+
+    await destinationHandle.sync();
+  } finally {
+    await destinationHandle?.close().catch(() => {});
+    await sourceHandle.close().catch(() => {});
+  }
+}
+
+async function copyUploads(
+  source,
+  destination,
+  relativePath = "",
+  sourceRootReal = source,
+) {
+  const expectedReal = relativePath
+    ? join(sourceRootReal, ...relativePath.split("/"))
+    : sourceRootReal;
+  const info = await lstat(source);
+
+  if (info.isSymbolicLink()) {
+    throw new Error(
+      `Refusing symbolic link in uploads: ${relativePath || "."}`,
+    );
+  }
+  if (!info.isDirectory()) {
+    throw new Error(
+      `Refusing non-directory upload path: ${relativePath || "."}`,
+    );
+  }
+
+  const currentReal = await realpath(source);
+  if (currentReal !== expectedReal) {
+    throw new Error(
+      `Uploads path changed or resolved through a symbolic link: ${relativePath || "."}`,
+    );
+  }
+
   await mkdir(destination, { recursive: true, mode: 0o700 });
   const directory = await opendir(source);
 
@@ -165,28 +286,57 @@ async function copyUploads(source, destination, relativePath = "") {
     const logicalPath = relativePath
       ? `${relativePath}/${entry.name}`
       : entry.name;
-    const info = await lstat(sourcePath);
+    const entryInfo = await lstat(sourcePath);
 
-    if (info.isSymbolicLink()) {
+    if (entryInfo.isSymbolicLink()) {
       throw new Error(`Refusing symbolic link in uploads: ${logicalPath}`);
     }
 
-    if (info.isDirectory()) {
-      await copyUploads(sourcePath, destinationPath, logicalPath);
+    if (entryInfo.isDirectory()) {
+      await copyUploads(
+        sourcePath,
+        destinationPath,
+        logicalPath,
+        sourceRootReal,
+      );
       continue;
     }
 
-    if (!info.isFile()) {
+    if (!entryInfo.isFile()) {
       throw new Error(`Refusing non-regular upload entry: ${logicalPath}`);
     }
 
-    await copyFile(sourcePath, destinationPath);
+    await copyRegularFileNoFollow(sourcePath, destinationPath, logicalPath);
   }
 }
 
-async function sha256File(path) {
-  const contents = await readFile(path);
-  return createHash("sha256").update(contents).digest("hex");
+async function inspectAndHashFile(path, label = path) {
+  const { handle, info } = await openRegularFileNoFollow(path, label);
+  const hash = createHash("sha256");
+
+  try {
+    const buffer = Buffer.allocUnsafe(1024 * 1024);
+    let position = 0;
+
+    while (true) {
+      const { bytesRead } = await handle.read(
+        buffer,
+        0,
+        buffer.length,
+        position,
+      );
+      if (bytesRead === 0) break;
+      hash.update(buffer.subarray(0, bytesRead));
+      position += bytesRead;
+    }
+
+    return {
+      bytes: info.size,
+      sha256: hash.digest("hex"),
+    };
+  } finally {
+    await handle.close().catch(() => {});
+  }
 }
 
 async function collectFiles(root, logicalRoot = "") {
@@ -213,10 +363,11 @@ async function collectFiles(root, logicalRoot = "") {
       throw new Error(`Backup staging contains a non-regular entry: ${logicalPath}`);
     }
 
+    const inspected = await inspectAndHashFile(path, logicalPath);
     results.push({
       path: logicalPath,
-      bytes: info.size,
-      sha256: await sha256File(path),
+      bytes: inspected.bytes,
+      sha256: inspected.sha256,
     });
   }
 
@@ -269,11 +420,11 @@ async function validateManifest(partialRoot, manifest) {
     capturedPaths.add(file.path);
 
     const destination = join(partialRoot, ...file.path.split("/"));
-    const info = await stat(destination);
-    if (!info.isFile() || info.size !== file.bytes) {
+    const inspected = await inspectAndHashFile(destination, file.path);
+    if (inspected.bytes !== file.bytes) {
       throw new Error(`Backup file size validation failed: ${file.path}`);
     }
-    if ((await sha256File(destination)) !== file.sha256) {
+    if (inspected.sha256 !== file.sha256) {
       throw new Error(`Backup checksum validation failed: ${file.path}`);
     }
   }
@@ -282,8 +433,8 @@ async function validateManifest(partialRoot, manifest) {
     throw new Error("Backup manifest is missing data.db");
   }
   if (!manifest.files.some((file) => file.path.startsWith("uploads/"))) {
-    const uploadsInfo = await stat(join(partialRoot, "uploads"));
-    if (!uploadsInfo.isDirectory()) {
+    const uploadsInfo = await lstat(join(partialRoot, "uploads"));
+    if (uploadsInfo.isSymbolicLink() || !uploadsInfo.isDirectory()) {
       throw new Error("Backup media directory is missing");
     }
   }
@@ -302,12 +453,22 @@ async function createBackup(options) {
 
   await assertRegularFile(sourceDb, "SQLite source database");
   await assertDirectory(sourceUploads, "Uploads source");
+  await assertNoSymlinkComponents(outputRoot, "Backup output path");
 
-  if (isInside(sourceUploads, outputRoot)) {
+  const sourceDbReal = await realpath(sourceDb);
+  const sourceUploadsReal = await realpath(sourceUploads);
+
+  if (isInside(sourceUploadsReal, outputRoot)) {
     throw new Error("Backup output must not be inside the uploads source directory");
   }
 
   await prepareOutputRoot(outputRoot);
+  await assertNoSymlinkComponents(outputRoot, "Backup output path");
+  const outputRootReal = await realpath(outputRoot);
+
+  if (isInside(sourceUploadsReal, outputRootReal)) {
+    throw new Error("Backup output must not resolve inside the uploads source directory");
+  }
 
   const createdAt = new Date();
   const backupName = `backup-${timestampLabel(createdAt)}-${randomUUID().slice(0, 8)}`;
@@ -321,14 +482,20 @@ async function createBackup(options) {
     const destinationDb = join(partialRoot, "data.db");
     const destinationUploads = join(partialRoot, "uploads");
 
-    await createDatabaseSnapshot(sourceDb, destinationDb);
-    await copyUploads(sourceUploads, destinationUploads);
+    await createDatabaseSnapshot(sourceDbReal, destinationDb);
+    await copyUploads(
+      sourceUploadsReal,
+      destinationUploads,
+      "",
+      sourceUploadsReal,
+    );
 
+    const databaseFile = await inspectAndHashFile(destinationDb, "data.db");
     const files = [
       {
         path: "data.db",
-        bytes: (await stat(destinationDb)).size,
-        sha256: await sha256File(destinationDb),
+        bytes: databaseFile.bytes,
+        sha256: databaseFile.sha256,
       },
       ...(await collectFiles(destinationUploads, "uploads")),
     ].sort((a, b) => a.path.localeCompare(b.path));

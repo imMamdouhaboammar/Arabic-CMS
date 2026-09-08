@@ -67,6 +67,8 @@ npm run backup -- --confirm-quiesced \
 
 The command refuses to run without `--confirm-quiesced`. That flag is an operator assertion that all editorial and media writes have already stopped for the capture window.
 
+The output path must not contain symbolic-link components and must not resolve inside the source `uploads/` tree. Upload files are opened with no-follow semantics before copying and hashing so a path replaced with a symlink is rejected rather than followed.
+
 Each completed backup is published as one timestamped `backup-*` directory containing:
 
 - `data.db` — a SQLite `VACUUM INTO` snapshot

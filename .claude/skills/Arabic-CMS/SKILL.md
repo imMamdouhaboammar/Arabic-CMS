@@ -1,125 +1,103 @@
 ---
 name: arabic-cms-conventions
-description: Development conventions and patterns for Arabic-CMS. TypeScript React project with conventional commits.
+description: Repository conventions for Arabic-CMS, an Arabic RTL EmDash site built with Astro and optional React integration.
 ---
 
-# Arabic Cms Conventions
+# Arabic CMS Conventions
 
-> Generated from [imMamdouhaboammar/Arabic-CMS](https://github.com/imMamdouhaboammar/Arabic-CMS) on 2026-09-08
-
-## Overview
-
-This skill teaches Claude the development patterns and conventions used in Arabic-CMS.
-
-## Tech Stack
-
-- **Primary Language**: TypeScript
-- **Framework**: React
-- **Architecture**: hybrid module organization
-- **Test Location**: separate
-
-## When to Use This Skill
-
-Activate this skill when:
-- Making changes to this repository
-- Adding new features following established patterns
-- Writing tests that match project conventions
-- Creating commits with proper message format
-
-## Commit Conventions
-
-Follow these commit message conventions based on 3 analyzed commits.
-
-### Commit Style: Conventional Commits
-
-### Prefixes Used
-
-- `test`
-- `ci`
-
-### Message Guidelines
-
-- Average message length: ~40 characters
-- Keep first line concise and descriptive
-- Use imperative mood ("Add feature" not "Added feature")
-
-
-*Commit message example*
-
-```text
-test: add UI quality contract runner
-```
-
-*Commit message example*
-
-```text
-ci: verify UI contracts typecheck and build
-```
-
-*Commit message example*
-
-```text
-test: define RTL UX performance contracts
-```
+Use this skill for implementation, review, testing, and maintenance work in this repository.
 
 ## Architecture
 
-### Project Structure: Single Package
+- Primary framework: Astro 7 with server rendering
+- CMS: EmDash
+- React is installed through `@astrojs/react` for optional interactive/admin components; public pages and layouts are Astro
+- Runtime output must remain `server`
+- Public routes live under `src/pages/`
+- Shared site shell is `src/layouts/Base.astro`
+- EmDash schema and fresh-site content live in `seed/seed.json`
+- Generated collection types live in `emdash-env.d.ts`
 
-This project uses **hybrid** module organization.
+## Core Repository Rules
 
-### Configuration Files
+- Keep CMS content routes server-rendered; do not add `getStaticPaths()` for CMS content
+- When an EmDash query returns a cache hint, call `Astro.cache.set(cacheHint)`
+- `entry.id` is the URL slug; `entry.data.id` is the database ULID used by APIs
+- Image fields are objects; render them with `<Image image={...} />` from `emdash/ui`
+- Taxonomy names must exactly match `seed/seed.json`
+- Do not modify `src/live.config.ts` unless EmDash documentation explicitly requires it
+- Do not enable public comments without a moderation plan
+- Preserve Arabic RTL behavior and prefer CSS logical properties such as `margin-inline-start`, `padding-inline-start`, and `border-inline-start`
+- Treat LTR technical content such as code, commands, and URLs as isolated LTR content
 
-- `.github/workflows/quality.yml`
-- `package.json`
+## Import Style
 
-### Guidelines
+Use relative imports for local source files unless the repository later adds and verifies an explicit TypeScript/Astro path-alias configuration.
 
-- This project uses a hybrid organization
-- Follow existing patterns when adding new code
+Examples:
 
-## Code Style
-
-### Language: TypeScript
-
-### Naming Conventions
-
-| Element | Convention |
-|---------|------------|
-| Files | camelCase |
-| Functions | camelCase |
-| Classes | PascalCase |
-| Constants | SCREAMING_SNAKE_CASE |
-
-### Import Style: Absolute Imports
-
-### Export Style: Named Exports
-
-
-*Preferred export style*
-
-```typescript
-// Use named exports
-export function calculateTotal() { ... }
-export const TAX_RATE = 0.1
-export interface Order { ... }
+```ts
+import Base from "../../layouts/Base.astro";
+import { getReadingTime } from "../../utils/reading-time";
 ```
 
-## Best Practices
+Do not introduce absolute local imports that are unsupported by `tsconfig.json`.
 
-Based on analysis of the codebase, follow these practices:
+## Key Files
 
-### Do
+- `AGENTS.md`: canonical repository instructions
+- `astro.config.mjs`: Astro, EmDash, database, storage, fonts, locale
+- `package.json`: scripts and dependencies
+- `tsconfig.json`: TypeScript configuration
+- `seed/seed.json`: collections, fields, taxonomies, menus, widgets, fresh-site seed
+- `src/layouts/Base.astro`: public shell and EmDash page wiring
+- `src/styles/theme.css`: theme overrides
+- `src/styles/tokens.css`: design-token defaults
 
-- Use conventional commit format (feat:, fix:, etc.)
-- Use camelCase for file names
-- Prefer named exports
+## Development Workflow
 
-### Don't
+Before editing:
+1. Read `AGENTS.md`
+2. Inspect the active route/component and its data flow
+3. Verify EmDash APIs against current documentation when behavior is uncertain
+4. Preserve server-rendered content behavior and Arabic RTL semantics
 
-- Don't write vague commit messages
-- Don't deviate from established patterns without discussion
+For behavior changes:
+1. Add or update a focused regression test when practical
+2. Implement the smallest change that satisfies the test and repository rules
+3. Run `npm test` when available
+4. Run `npm run typecheck`
+5. Run `npm run build`
 
----
+## Commit Style
 
-*This skill was auto-generated by [ECC Tools](https://ecc.tools). Review and customize as needed for your team.*
+Use concise conventional commits that describe the actual scope.
+
+Common prefixes in this repository include:
+- `feat:`
+- `fix:`
+- `test:`
+- `ci:`
+- `perf:`
+- `a11y:`
+- `i18n:`
+- `content:`
+- `chore:`
+
+## Review Priorities
+
+Review changes in this order:
+1. Correctness and data integrity
+2. EmDash SSR/cache/id semantics
+3. Security and external execution
+4. Arabic RTL behavior
+5. Accessibility
+6. Mobile behavior
+7. Public-route performance
+8. Visual polish
+
+## External Tools
+
+Do not assume repository-local MCP servers are safe to execute. External MCPs, credentials, and personal integrations belong in user-level configuration after explicit review.
+
+The root `AGENTS.md` remains the source of truth if this skill conflicts with repository instructions.

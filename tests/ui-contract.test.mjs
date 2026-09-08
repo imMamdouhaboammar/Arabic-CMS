@@ -100,7 +100,7 @@ test("published dates expose machine-readable datetime values", async () => {
     read("src/pages/posts/[slug].astro"),
   ]);
 
-  assert.match(card, /datetime=\{date\.toISOString\(\)\}/);
+  assert.match(card, /const dateIso = date\?\.toISOString\(\) \?\? null/);\n  assert.match(card, /datetime=\{dateIso\}/);
   assert.match(posts, /datetime=\{post\.data\.publishedAt\.toISOString\(\)\}/);
-  assert.match(article, /datetime=\{post\.data\.publishedAt\.toISOString\(\)\}/);
+  assert.match(article, /const publishedAtIso = post\.data\.publishedAt\?\.toISOString\(\) \?\? null/);\n  assert.match(article, /datetime=\{publishedAtIso\}/);
 });

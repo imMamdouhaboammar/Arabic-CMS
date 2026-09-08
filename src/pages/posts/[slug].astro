@@ -16,6 +16,7 @@ import Base from "../../layouts/Base.astro";
 import PostCard from "../../components/PostCard.astro";
 import { getReadingTime, formatReadingTime } from "../../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../../utils/site-identity";
+import { serializeJsonLd } from "../../utils/json-ld.js";
 
 const slug = decodeSlug(Astro.params.slug);
 
@@ -113,7 +114,7 @@ const publishedAtIso = post.data.publishedAt?.toISOString() ?? null;
 	<script
 		type="application/ld+json"
 		is:inline
-		set:html={JSON.stringify({
+		set:html={serializeJsonLd({
 			"@context": "https://schema.org",
 			"@type": "BlogPosting",
 			"headline": post.data.title,

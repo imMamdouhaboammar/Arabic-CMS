@@ -9,6 +9,7 @@ import {
 import { createPublicPageContext } from "emdash/page";
 import { Font } from "astro:assets";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
+import { serializeJsonLd } from "../utils/json-ld.js";
 import "../styles/tokens.css";
 import "../styles/theme.css";
 
@@ -83,7 +84,7 @@ const isLoggedIn = !!Astro.locals.user;
 		<script
 			type="application/ld+json"
 			is:inline
-			set:html={JSON.stringify({
+			set:html={serializeJsonLd({
 				"@context": "https://schema.org",
 				"@type": "WebSite",
 				"name": siteTitle,

@@ -94,6 +94,7 @@ const publishDate =
 		month: "long",
 		day: "numeric",
 	}) ?? null;
+const publishedAtIso = post.data.publishedAt?.toISOString() ?? null;
 ---
 
 <Base
@@ -178,10 +179,10 @@ const publishDate =
 						)
 					}
 					{
-						publishDate && (
+						publishDate && publishedAtIso && (
 							<div class="meta-block">
 								<span class="meta-label">تاريخ النشر</span>
-								<time class="meta-value" datetime={post.data.publishedAt.toISOString()}>{publishDate}</time>
+								<time class="meta-value" datetime={publishedAtIso}>{publishDate}</time>
 							</div>
 						)
 					}
@@ -226,9 +227,9 @@ const publishDate =
 							)
 						}
 						{
-							publishDate && (
+							publishDate && publishedAtIso && (
 								<>
-									<time datetime={post.data.publishedAt.toISOString()}>{publishDate}</time>
+									<time datetime={publishedAtIso}>{publishDate}</time>
 									<span class="meta-dot" />
 								</>
 							)

@@ -1,5 +1,5 @@
 ---
-import { getMenu, getSiteSettings } from "emdash";
+import { getEmDashCollection, getMenu, getSiteSettings } from "emdash";
 import {
 	WidgetArea,
 	EmDashHead,
@@ -41,9 +41,10 @@ const {
 	content,
 } = Astro.props;
 // Site identity and the primary navigation are independent, so fetch them together.
-const [siteSettings, menu] = await Promise.all([
+const [siteSettings, menu, { entries: pages }] = await Promise.all([
 	getSiteSettings(),
 	getMenu("primary"),
+	getEmDashCollection("pages"),
 ]);
 const { siteTitle, siteTagline, siteLogo } = resolveBlogSiteIdentity(siteSettings);
 // If title already includes site title (from getSeoMeta), use as-is.
@@ -175,6 +176,15 @@ const isLoggedIn = !!Astro.locals.user;
 											rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
 										>
 											{item.label}
+										</a>
+									</li>
+								))
+							}
+							{
+								pages.slice(0, 3).map((page) => (
+									<li>
+										<a href={`/pages/${page.data.slug || page.id}`}>
+											{page.data.title}
 										</a>
 									</li>
 								))

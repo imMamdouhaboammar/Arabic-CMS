@@ -26,6 +26,15 @@ test("both public JSON-LD script sinks use the shared safe serializer", async ()
     read("src/pages/posts/[slug].astro"),
   ]);
 
+  assert.match(
+    base,
+    /import\s+\{\s*serializeJsonLd\s*\}\s+from\s+["']\.\.\/utils\/json-ld\.js["']/,
+  );
+  assert.match(
+    article,
+    /import\s+\{\s*serializeJsonLd\s*\}\s+from\s+["']\.\.\/\.\.\/utils\/json-ld\.js["']/,
+  );
+
   for (const source of [base, article]) {
     assert.match(source, /set:html\s*=\s*\{serializeJsonLd\(\s*\{/);
     assert.doesNotMatch(source, /set:html\s*=\s*\{JSON\.stringify\(/);

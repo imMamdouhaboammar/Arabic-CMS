@@ -8,26 +8,69 @@ const read = (path) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 const DYNAMIC_PUBLIC_ROUTES = [
-  "src/pages/posts/[slug].astro",
-  "src/pages/pages/[slug].astro",
-  "src/pages/category/[slug].astro",
-  "src/pages/tag/[slug].astro",
+  {
+    path: "src/pages/posts/[slug].astro",
+    missingBranches: ["slug", "post"],
+    errorBeforeMissing: ["postError", "post"],
+  },
+  {
+    path: "src/pages/pages/[slug].astro",
+    missingBranches: ["slug", "page"],
+    errorBeforeMissing: ["pageError", "page"],
+  },
+  {
+    path: "src/pages/category/[slug].astro",
+    missingBranches: ["term"],
+  },
+  {
+    path: "src/pages/tag/[slug].astro",
+    missingBranches: ["term"],
+  },
 ];
 
-for (const path of DYNAMIC_PUBLIC_ROUTES) {
-  test(`${path} renders missing content through the 404 route without redirecting`, async () => {
-    const source = await read(path);
+const escaped = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+for (const route of DYNAMIC_PUBLIC_ROUTES) {
+  test(`${route.path} renders each missing-content branch through /404 without redirecting`, async () => {
+    const source = await read(route.path);
 
     assert.doesNotMatch(
       source,
       /Astro\.redirect\(\s*["']\/404["']\s*\)/,
-      `${path} must not redirect missing content to /404`,
+      `${route.path} must not redirect missing content to /404`,
     );
-    assert.match(
-      source,
-      /return\s+Astro\.rewrite\(\s*["']\/404["']\s*\)/,
-      `${path} must rewrite missing content to the 404 route`,
-    );
+
+    for (const missing of route.missingBranches) {
+      const branch = new RegExp(
+        `if\\s*\\(\\s*!\\s*${escaped(missing)}\\s*\\)\\s*\\{\\s*return\\s+Astro\\.rewrite\\(\\s*["']\\/404["']\\s*\\)\\s*;?\\s*\\}`,
+      );
+      assert.match(
+        source,
+        branch,
+        `${route.path} must rewrite the ${missing} missing branch to /404`,
+      );
+    }
+
+    if (route.errorBeforeMissing) {
+      const [errorName, missingName] = route.errorBeforeMissing;
+      const errorIndex = source.indexOf(`if (${errorName})`);
+      const missingIndex = source.indexOf(`if (!${missingName})`);
+
+      assert.notEqual(
+        errorIndex,
+        -1,
+        `${route.path} must retain the ${errorName} query-error check`,
+      );
+      assert.notEqual(
+        missingIndex,
+        -1,
+        `${route.path} must retain the ${missingName} not-found check`,
+      );
+      assert.ok(
+        errorIndex < missingIndex,
+        `${route.path} must handle ${errorName} before the ${missingName} 404 branch`,
+      );
+    }
   });
 }
 
@@ -94,9 +137,11 @@ test(
 
     try {
       const deadline = Date.now() + 20_000;
+      let started = false;
       while (Date.now() < deadline) {
         try {
           await fetch(`${origin}/404`, { redirect: "manual" });
+          started = true;
           break;
         } catch {
           if (output.exited) {
@@ -105,6 +150,8 @@ test(
           await new Promise((resolve) => setTimeout(resolve, 200));
         }
       }
+
+      assert.ok(started, `Astro fixture server did not start:\n${output.text}`);
 
       const response = await fetch(`${origin}/missing-contract`, {
         redirect: "manual",

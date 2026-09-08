@@ -181,7 +181,7 @@ const publishDate =
 						publishDate && (
 							<div class="meta-block">
 								<span class="meta-label">تاريخ النشر</span>
-								<time class="meta-value">{publishDate}</time>
+								<time class="meta-value" datetime={post.data.publishedAt.toISOString()}>{publishDate}</time>
 							</div>
 						)
 					}
@@ -228,7 +228,7 @@ const publishDate =
 						{
 							publishDate && (
 								<>
-									<time>{publishDate}</time>
+									<time datetime={post.data.publishedAt.toISOString()}>{publishDate}</time>
 									<span class="meta-dot" />
 								</>
 							)
@@ -349,22 +349,6 @@ const publishDate =
 				mobileContainer.appendChild(createList());
 			}
 
-			// Highlight active section on scroll
-			const observer = new IntersectionObserver(
-				(entries) => {
-					entries.forEach((entry) => {
-						const id = entry.target.id;
-						const activeLinks = document.querySelectorAll(`a.toc-link[href="#${id}"]`);
-						if (entry.isIntersecting) {
-							document.querySelectorAll(".toc-link").forEach((l) => l.classList.remove("active"));
-							activeLinks.forEach((l) => l.classList.add("active"));
-						}
-					});
-				},
-				{ rootMargin: "-80px 0px -70% 0px" }
-			);
-
-			headings.forEach((heading) => observer.observe(heading));
 		}
 
 		buildToc();
@@ -521,6 +505,7 @@ const publishDate =
 	}
 
 	.article-title {
+		overflow-wrap: anywhere;
 		font-size: clamp(2rem, 5vw, var(--font-size-5xl));
 		font-weight: var(--font-weight-display);
 		line-height: var(--leading-tight);
@@ -592,8 +577,13 @@ const publishDate =
 
 	/* Article content typography */
 	.article-content {
+		min-width: 0;
 		font-size: var(--font-size-lg);
 		line-height: var(--leading-relaxed);
+	}
+
+	.article-content :global(a) {
+		overflow-wrap: anywhere;
 	}
 
 	.article-content :global(p) {

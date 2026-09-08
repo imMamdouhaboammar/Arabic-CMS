@@ -95,11 +95,15 @@ test("backup command creates one complete integrity-checkable recovery set witho
     assert.equal(manifest.version, 1);
     assert.match(manifest.createdAt, /^\d{4}-\d{2}-\d{2}T/);
     assert.equal(manifest.state, "complete");
+    assert.match(
+      await readFile(join(setRoot, "COMPLETE"), "utf8"),
+      /^\d{4}-\d{2}-\d{2}T/,
+    );
     assert.equal(manifest.database.path, "data.db");
     assert.equal(manifest.media.path, "uploads");
     assert.equal(manifest.application.packageVersion, "0.0.3");
     assert.ok(Object.hasOwn(manifest.application, "commit"));
-    assert.match(manifest.application.nodeVersion, /^v22\./);
+    assert.equal(manifest.application.nodeVersion, process.version);
     assert.ok(Array.isArray(manifest.files));
 
     const expectedPaths = [

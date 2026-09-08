@@ -74,8 +74,9 @@ Each completed backup is published as one timestamped `backup-*` directory conta
 - `data.db` — a SQLite `VACUUM INTO` snapshot
 - `uploads/` — the matching local media tree
 - `manifest.json` — capture time, application metadata, logical file paths, byte sizes, and SHA-256 checksums
+- `COMPLETE` — a synced completion marker; a set without this marker is not eligible for restore
 
-The operation builds the set under a `.partial-*` directory and renames it to `backup-*` only after snapshot, media capture, and checksum validation succeed. A `.partial-*` directory is never a valid restore source. Normal failures are cleaned up and exit non-zero; an unexpected process or host interruption may leave a `.partial-*` directory that operators must treat as incomplete.
+The operation builds the set under a `.partial-*` directory and renames it to `backup-*` only after snapshot, media capture, checksum validation, file synchronization, directory synchronization, and a synced `COMPLETE` marker succeed. The output parent directory is synchronized before and after the rename on platforms that support directory fsync. A `.partial-*` directory or a set without `COMPLETE` is never a valid restore source. Normal failures are cleaned up and exit non-zero; an unexpected process or host interruption may leave a `.partial-*` directory that operators must treat as incomplete.
 
 Symbolic links and non-regular entries under `uploads/` are rejected rather than followed into the backup.
 
@@ -105,7 +106,7 @@ At minimum:
 
 Before restoring:
 
-1. Select one **complete** `backup-*` set; never use `.partial-*` and never mix database and media from different sets
+1. Select one **complete** `backup-*` set with a `COMPLETE` marker; never use `.partial-*`, never use a set without the marker, and never mix database and media from different sets
 2. Use an empty/disposable target or place the destination application into maintenance with all writers stopped
 3. Confirm the target application version/schema is compatible with the recorded backup version
 4. Restore the required deployment secrets from the operator secret store, including the same `EMDASH_ENCRYPTION_KEY` when applicable

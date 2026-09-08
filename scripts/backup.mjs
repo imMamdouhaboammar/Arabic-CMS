@@ -9,7 +9,6 @@ import {
   realpath,
   rename,
   rm,
-  writeFile,
 } from "node:fs/promises";
 import { isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -183,6 +182,69 @@ const NO_FOLLOW = fsConstants.O_NOFOLLOW ?? 0;
 const READ_FLAGS = fsConstants.O_RDONLY | NO_FOLLOW;
 const WRITE_NEW_FLAGS =
   fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_EXCL;
+const SYNC_FILE_FLAGS = fsConstants.O_RDWR | NO_FOLLOW;
+const DIRECTORY_FLAGS =
+  fsConstants.O_RDONLY | (fsConstants.O_DIRECTORY ?? 0) | NO_FOLLOW;
+
+async function syncRegularFile(path, label = path) {
+  let handle;
+  try {
+    handle = await open(path, SYNC_FILE_FLAGS);
+  } catch (error) {
+    if (error.code === "ELOOP") {
+      throw new Error(`Refusing symbolic link while syncing: ${label}`);
+    }
+    throw error;
+  }
+
+  try {
+    const info = await handle.stat();
+    if (!info.isFile()) {
+      throw new Error(`Refusing non-regular file while syncing: ${label}`);
+    }
+    await handle.sync();
+  } finally {
+    await handle.close().catch(() => {});
+  }
+}
+
+async function syncDirectory(path, label = path) {
+  let handle;
+  try {
+    handle = await open(path, DIRECTORY_FLAGS);
+  } catch (error) {
+    if (
+      process.platform === "win32" &&
+      ["EISDIR", "EPERM", "EINVAL", "ENOTSUP"].includes(error.code)
+    ) {
+      return;
+    }
+    if (error.code === "ELOOP") {
+      throw new Error(`Refusing symbolic-link directory while syncing: ${label}`);
+    }
+    throw error;
+  }
+
+  try {
+    const info = await handle.stat();
+    if (!info.isDirectory()) {
+      throw new Error(`Refusing non-directory while syncing: ${label}`);
+    }
+    await handle.sync();
+  } finally {
+    await handle.close().catch(() => {});
+  }
+}
+
+async function writeSyncedFile(path, contents, mode = 0o600) {
+  const handle = await open(path, WRITE_NEW_FLAGS, mode);
+  try {
+    await handle.writeFile(contents);
+    await handle.sync();
+  } finally {
+    await handle.close().catch(() => {});
+  }
+}
 
 async function openRegularFileNoFollow(path, label) {
   let handle;
@@ -308,6 +370,8 @@ async function copyUploads(
 
     await copyRegularFileNoFollow(sourcePath, destinationPath, logicalPath);
   }
+
+  await syncDirectory(destination, `backup media directory ${relativePath || "."}`);
 }
 
 async function inspectAndHashFile(path, label = path) {
@@ -517,13 +581,34 @@ async function createBackup(options) {
     };
 
     await validateManifest(partialRoot, manifest);
-    await writeFile(
+    await syncRegularFile(destinationDb, "data.db");
+
+    await writeSyncedFile(
       join(partialRoot, "manifest.json"),
       `${JSON.stringify(manifest, null, 2)}\n`,
-      { mode: 0o600 },
+    );
+    await writeSyncedFile(
+      join(partialRoot, "COMPLETE"),
+      `${createdAt.toISOString()}\n`,
     );
 
+    await syncDirectory(partialRoot, "backup staging directory");
+    await syncDirectory(outputRoot, "backup output directory");
+
     await rename(partialRoot, finalRoot);
+    try {
+      await syncDirectory(outputRoot, "backup output directory");
+    } catch (error) {
+      const rolledBack = await rename(finalRoot, partialRoot)
+        .then(() => true)
+        .catch(() => false);
+      if (!rolledBack) {
+        await rm(finalRoot, { recursive: true, force: true }).catch(() => {});
+      }
+      await syncDirectory(outputRoot, "backup output directory").catch(() => {});
+      throw error;
+    }
+
     published = true;
 
     console.log(finalRoot);

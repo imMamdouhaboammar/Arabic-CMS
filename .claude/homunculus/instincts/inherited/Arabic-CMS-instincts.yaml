@@ -1,0 +1,78 @@
+# Curated instincts for imMamdouhaboammar/Arabic-CMS
+# Reviewed after the initial ECC repository analysis.
+# These supplement, and never override, the root AGENTS.md.
+
+---
+id: Arabic-CMS-astro-emdash
+trigger: "when changing application architecture or CMS routes"
+confidence: 0.95
+domain: architecture
+source: curated-review
+source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
+---
+
+# Preserve Astro and EmDash Architecture
+
+## Action
+
+Keep CMS content routes server-rendered in Astro, preserve EmDash query/cache semantics, and treat React as an optional integration rather than the public-site framework.
+
+---
+id: Arabic-CMS-relative-imports
+trigger: "when adding a local source import"
+confidence: 0.95
+domain: code-style
+source: curated-review
+source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
+---
+
+# Use Relative Local Imports
+
+## Action
+
+Use relative imports for repository source files unless a validated TypeScript/Astro path alias is explicitly added.
+
+---
+id: Arabic-CMS-rtl-logical-css
+trigger: "when editing layout or visual CSS"
+confidence: 0.95
+domain: accessibility
+source: curated-review
+source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
+---
+
+# Preserve Arabic RTL Semantics
+
+## Action
+
+Prefer CSS logical properties, maintain Arabic RTL reading behavior, and isolate LTR technical content such as code and URLs.
+
+---
+id: Arabic-CMS-quality-gate
+trigger: "before declaring a repository change ready to merge"
+confidence: 0.95
+domain: testing
+source: curated-review
+source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
+---
+
+# Run the Quality Gate
+
+## Action
+
+Run npm test, npm run typecheck, and npm run build. Treat failures as blockers unless proven unrelated and explicitly documented.
+
+---
+id: Arabic-CMS-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.9
+domain: git
+source: curated-review
+source_repo: https://github.com/imMamdouhaboammar/Arabic-CMS
+---
+
+# Use Conventional Commits
+
+## Action
+
+Use concise conventional commit prefixes that match the actual change, such as feat, fix, test, ci, perf, a11y, i18n, content, docs, or chore.

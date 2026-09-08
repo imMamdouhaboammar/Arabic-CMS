@@ -1,0 +1,17 @@
+{
+  "version": "2.0",
+  "technicalLevel": "technical",
+  "preferredStyle": {
+    "verbosity": "detailed",
+    "codeComments": false,
+    "explanations": true
+  },
+  "domains": [
+    "typescript",
+    "astro",
+    "emdash",
+    "arabic-rtl"
+  ],
+  "suggestedBy": "ecc-tools-repo-analysis",
+  "createdAt": "2026-09-08T11:05:46.898Z"
+}

@@ -246,4 +246,6 @@ test("repository exposes and documents the backup command", async () => {
   assert.equal(packageJson.scripts.backup, "node scripts/backup.mjs");
   assert.match(contract, /npm run backup/);
   assert.match(contract, /--confirm-quiesced/);
+  assert.match(contract, /Node\.js 22\.16\.0 or later/);
+  assert.match(contract, /node:sqlite/);
 });

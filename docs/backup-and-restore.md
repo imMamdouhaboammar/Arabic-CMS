@@ -44,6 +44,8 @@ The repository backup command implements this sequence with SQLite `VACUUM INTO`
 
 ## Automated capture command
 
+This command requires **Node.js 22.16.0 or later**, matching the current EmDash Node.js deployment requirement. It uses the built-in `node:sqlite` module and does not add an external SQLite CLI dependency.
+
 The command deliberately does not stop application/editor writes for you. First establish the write-quiescence window described above, then run:
 
 ```bash

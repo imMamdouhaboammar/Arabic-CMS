@@ -3,12 +3,14 @@
   "technicalLevel": "technical",
   "preferredStyle": {
     "verbosity": "detailed",
-    "codeComments": true,
+    "codeComments": false,
     "explanations": true
   },
   "domains": [
     "typescript",
-    "react"
+    "astro",
+    "emdash",
+    "arabic-rtl"
   ],
   "suggestedBy": "ecc-tools-repo-analysis",
   "createdAt": "2026-09-08T11:05:46.898Z"

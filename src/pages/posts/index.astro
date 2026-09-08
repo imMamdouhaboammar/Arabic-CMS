@@ -5,6 +5,7 @@ import { getReadingTime, formatReadingTime } from "../../utils/reading-time";
 
 // Sort in the database rather than in JS
 const { entries: posts, cacheHint } = await getEmDashCollection("posts", {
+	status: "published",
 	orderBy: { published_at: "desc" },
 });
 

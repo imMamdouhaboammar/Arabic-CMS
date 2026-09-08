@@ -17,6 +17,7 @@ if (!term) {
 }
 
 const { entries: posts, cacheHint } = await getEmDashCollection("posts", {
+	status: "published",
 	where: { category: term.slug },
 	orderBy: { published_at: "desc" },
 });

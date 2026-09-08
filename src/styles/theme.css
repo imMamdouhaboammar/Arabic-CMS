@@ -1,0 +1,141 @@
+/*
+  theme.css -- your theme overrides. This is the file to edit to
+  retheme the site.
+
+  Every design token lives in src/styles/tokens.css (colors, type
+  scale, spacing, layout, shadows) with its default value. Override any
+  of them here: declarations in this file are unlayered, so they always
+  beat the @layer base defaults in tokens.css.
+
+  Colors are defined with light-dark(). Overriding with a plain color
+  changes light and dark mode at once; use light-dark(<light>, <dark>)
+  to set different values per mode.
+
+  Webfonts are loaded in astro.config.mjs (--font-body, --font-mono).
+  Swap the loaded font there; use overrides here for system fonts or a
+  separate heading face.
+
+  Example:
+
+  :root {
+    --color-brand: light-dark(#0f766e, #2dd4bf);
+    --font-heading: "Iowan Old Style", Georgia, serif;
+    --radius: 8px;
+  }
+*/
+
+/*
+  theme.css -- Arabic editorial theme overrides.
+  Declarations here are unlayered and override tokens.css defaults.
+*/
+
+:root {
+	/* Editorial Colors */
+	--color-bg: light-dark(#fcfcfd, #111215);
+	--color-bg-subtle: light-dark(#f7f7f9, #17181c);
+	--color-surface: light-dark(#f2f2f5, #1d1e24);
+	--color-text: light-dark(#16161a, #efeff1);
+	--color-text-secondary: light-dark(#4a4b53, #a2a3ab);
+	--color-muted: light-dark(#71717a, #7d7e87);
+	--color-border: light-dark(#e4e4e7, #27272a);
+	--color-border-subtle: light-dark(#ececf0, #1f2025);
+	
+	/* Restrained Architectural Accent */
+	--color-brand: light-dark(#1d4ed8, #60a5fa);
+	--color-brand-hover: light-dark(#1e40af, #93c5fd);
+	--color-on-brand: #ffffff;
+	--color-brand-ring: color-mix(in srgb, var(--color-brand) 25%, transparent);
+
+	/* Arabic Typography Line-heights and Spacing */
+	--leading-tight: 1.35;
+	--leading-snug: 1.55;
+	--leading-normal: 1.8;
+	--leading-relaxed: 1.95;
+
+	/* Arabic script requires 0 letter-spacing to preserve cursive ligatures */
+	--tracking-tight: 0;
+	--tracking-snug: 0;
+	--tracking-wide: 0;
+	--tracking-wider: 0;
+
+	/* Body & Content Reading Measure */
+	--font-size-base: 1.0625rem; /* ~17-18px */
+	--content-width: 720px;
+	--max-width: var(--content-width);
+	--meta-col-width: 170px;
+	--gutter-width: 220px;
+}
+
+/* Document & Text Alignment */
+html[dir="rtl"] {
+	text-align: start;
+}
+
+/* Accessibility Focus States */
+*:focus-visible {
+	outline: 2px solid var(--color-brand) !important;
+	outline-offset: 3px !important;
+}
+
+/* Skip Navigation Link */
+.skip-link {
+	position: absolute;
+	top: -100px;
+	inset-inline-start: var(--spacing-4);
+	background: var(--color-brand);
+	color: var(--color-on-brand);
+	padding: var(--spacing-2) var(--spacing-4);
+	border-radius: var(--radius);
+	z-index: 1000;
+	font-size: var(--font-size-sm);
+	font-weight: 600;
+	text-decoration: none;
+	transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+	top: var(--spacing-4);
+}
+
+/* Strict LTR Isolate for Technical Content */
+code,
+pre,
+kbd,
+samp,
+.code-block,
+[dir="ltr"] {
+	direction: ltr !important;
+	text-align: left !important;
+	unicode-bidi: isolate;
+}
+
+/* Inline Code Elements */
+code {
+	font-family: var(--font-mono);
+	font-size: 0.9em;
+	padding: 0.15em 0.35em;
+	background: var(--color-surface);
+	border-radius: var(--radius-sm);
+}
+
+pre {
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+pre code {
+	background: none !important;
+	padding: 0 !important;
+}
+
+/* Bidi isolation for inline technical terms */
+bdi,
+.bdi-isolate {
+	unicode-bidi: isolate;
+}
+
+/* Keep the signed-in Admin link separated */
+.nav-admin {
+	margin-inline-start: var(--spacing-5);
+}
+

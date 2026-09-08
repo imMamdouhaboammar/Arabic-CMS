@@ -1,0 +1,29 @@
+{
+  "name": "arabic-rtl-emdash-architecture-blog",
+  "version": "0.0.3",
+  "private": true,
+  "type": "module",
+  "emdash": {
+    "label": "Blog",
+    "seed": "seed/seed.json"
+  },
+  "scripts": {
+    "dev": "astro dev --port 3000 --host 0.0.0.0",
+    "build": "astro build",
+    "preview": "astro preview --port 3000 --host 0.0.0.0",
+    "start": "HOST=0.0.0.0 PORT=3000 node ./dist/server/entry.mjs",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.0.0",
+    "@astrojs/react": "^6.0.0",
+    "@emdash-cms/plugin-audit-log": "^0.2.0",
+    "astro": "^7.0.0",
+    "emdash": "^0.36.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.7"
+  }
+}

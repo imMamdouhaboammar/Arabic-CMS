@@ -53,7 +53,7 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:4321 for the site and http://localhost:4321/_emdash/admin for the CMS.
+Open http://localhost:3000 for the site and http://localhost:3000/_emdash/admin for the CMS.
 
 ## Want Cloudflare Instead?
 

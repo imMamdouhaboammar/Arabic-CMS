@@ -2,5 +2,5 @@
   "name": "Arabic RTL EmDash Architecture Blog",
   "description": "An Arabic-first technical publication dedicated to software architecture, engineering thinking, and developer productivity.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

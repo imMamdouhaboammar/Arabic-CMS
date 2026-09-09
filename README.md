@@ -50,7 +50,6 @@ SQLite content and local media are persistent runtime state and must be recovere
 
 ```bash
 pnpm install
-pnpm bootstrap
 pnpm dev
 ```
 

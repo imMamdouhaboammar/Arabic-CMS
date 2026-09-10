@@ -1,21 +1,29 @@
-# EmDash Blog Template
+# Arabic-CMS
 
-A clean, minimal blog built with [EmDash](https://github.com/emdash-cms/emdash). Runs on any Node.js server with SQLite and local file storage.
+Arabic-first RTL technical publication CMS built on [EmDash](https://github.com/emdash-cms/emdash) and Astro. This repository is no longer the upstream EmDash blog template: the public site ships Arabic locale defaults, IBM Plex Sans Arabic typography, and seed content for an architecture / developer-productivity publication.
 
-![Blog template homepage](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/blog/latest/homepage-light-desktop.jpg)
+Seeded site identity (from `seed/seed.json` / `metadata.json`):
 
-## What's Included
+- **Name:** مدونة عربية تقنية
+- **Focus:** software architecture, engineering thinking, and developer productivity
+- **Author byline:** ممدوح أبو عمار
 
-- Featured post hero on the homepage
-- Post archive with reading time estimates
-- Category and tag archives
-- Full-text search
-- RSS feed
-- SEO metadata and JSON-LD
-- Dark/light mode
-- Audit log plugin
+## What works today
 
-## Pages
+- Server-rendered public routes (`output: "server"`) with the Astro Node standalone adapter
+- Arabic-only i18n (`defaultLocale: "ar"`) and Arabic font scripting through EmDash
+- Homepage, post archive, single posts, category/tag archives, search, static pages, RSS, and Arabic 404/500 pages
+- Local SQLite content (`data.db`) and local media (`uploads/`)
+- EmDash admin UI, audit-log plugin, dark/light theme, SEO metadata / JSON-LD helpers already present in the template surface
+- Repository Quality CI on Node 22: `npm ci`, `npm test`, `npm run typecheck`, `npm run build`
+
+## Intentional limits
+
+- No Cloudflare / D1 / R2 variant in this repo (remove upstream template links that pointed at sibling templates)
+- Backup *automation* for SQLite + uploads is tracked separately (see `docs/backup-and-restore.md` and open Issue #15 / PR #124)
+- Canonical package-manager enforcement is still an open product decision (Issue #114 / #115); CI currently installs with **npm** via `package-lock.json`
+
+## Routes
 
 | Page | Route |
 |---|---|
@@ -26,42 +34,67 @@ A clean, minimal blog built with [EmDash](https://github.com/emdash-cms/emdash).
 | Tag archive | `/tag/:slug` |
 | Search | `/search` |
 | Static pages | `/pages/:slug` |
-| 404 | fallback |
+| RSS | `/rss.xml` |
+| Admin | `/_emdash/admin` |
+| 404 / 500 | fallback pages |
 
-## Screenshots
+## Stack
 
-| | Desktop | Mobile |
-|---|---|---|
-| Light | ![homepage light desktop](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/blog/latest/homepage-light-desktop.jpg) | ![homepage light mobile](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/blog/latest/homepage-light-mobile.jpg) |
-| Dark | ![homepage dark desktop](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/blog/latest/homepage-dark-desktop.jpg) | ![homepage dark mobile](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/blog/latest/homepage-dark-mobile.jpg) |
+| Layer | Choice |
+|---|---|
+| Runtime | Node.js 22 (Quality workflow) |
+| Framework | Astro + `@astrojs/node` (standalone) |
+| CMS | EmDash (`emdash`, `@emdash-cms/plugin-audit-log`) |
+| Database | SQLite (`file:./data.db`) |
+| Media | Local filesystem (`./uploads`) |
+| UI fonts | IBM Plex Sans Arabic + JetBrains Mono |
 
-## Infrastructure
-
-- **Runtime:** Node.js
-- **Database:** SQLite (local file)
-- **Storage:** Local filesystem
-- **Framework:** Astro with `@astrojs/node`
-
-### Backup and recovery
-
-SQLite content and local media are persistent runtime state and must be recovered together. See the [backup and restore contract](docs/backup-and-restore.md) before creating backup automation or restoring CMS data.
-
-## Getting Started
+## Setup
 
 ```bash
-pnpm install
-pnpm dev
+npm ci
+npm run dev
 ```
 
-Open http://localhost:3000 for the site and http://localhost:3000/_emdash/admin for the CMS.
+- Site: http://localhost:3000
+- Admin: http://localhost:3000/_emdash/admin
 
-## Want Cloudflare Instead?
+Copy `.env.example` before enabling session encryption. Keep `EMDASH_ENCRYPTION_KEY` private.
 
-See the [Cloudflare variant](../blog-cloudflare) for a version that deploys to Cloudflare Workers with D1 and R2.
+Production-style start after a build:
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/emdash-cms/templates/tree/main/blog-cloudflare)
+```bash
+npm run build
+npm start
+```
 
-## See Also
+## Verification
 
-- [All templates](../)
-- [EmDash documentation](https://github.com/emdash-cms/emdash/tree/main/docs)
+Match the Quality workflow:
+
+```bash
+npm test
+npm run typecheck
+npm run build
+```
+
+## Repository map
+
+| Path | Purpose |
+|---|---|
+| `astro.config.mjs` | Arabic locale, EmDash SQLite/local storage, fonts, audit-log plugin |
+| `seed/seed.json` | Schema + Arabic demo content |
+| `src/pages/` | Public SSR routes |
+| `src/layouts/` | Shared EmDash layout wiring |
+| `docs/backup-and-restore.md` | SQLite + uploads recovery contract |
+| `tests/` | Node test runner coverage |
+| `AGENTS.md` | Agent working notes for EmDash |
+
+## Ops notes
+
+SQLite content and local media are one recovery boundary. Read [backup and restore](docs/backup-and-restore.md) before inventing backup/restore steps.
+
+## Upstream
+
+EmDash is the CMS dependency and docs source: https://github.com/emdash-cms/emdash and https://docs.emdashcms.com. This fork’s product surface is Arabic-CMS, not the generic blog template marketing page.
+

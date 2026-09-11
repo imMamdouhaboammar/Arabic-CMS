@@ -104,8 +104,8 @@ const isLoggedIn = !!Astro.locals.user;
 			// With no cookie, color-scheme: light dark follows the OS.
 			(function () {
 				var c = document.cookie;
-				var i = c.indexOf("theme=");
-				var theme = i >= 0 ? c.slice(i + 6).split(";")[0] : null;
+				var m = c.match(/(?:^|;\s*)theme=([^;]*)/);
+				var theme = m ? m[1] : null;
 				if (theme === "dark" || theme === "light") {
 					document.documentElement.classList.add(theme);
 				}
@@ -296,7 +296,7 @@ const isLoggedIn = !!Astro.locals.user;
 
 		<script>
 			// Theme switcher
-			const THEME_REGEX = /theme=([^;]+)/;
+			const THEME_REGEX = /(?:^|;\s*)theme=([^;]*)/;
 			const themeBtns =
 				document.querySelectorAll<HTMLButtonElement>(".theme-btn");
 			const root = document.documentElement;

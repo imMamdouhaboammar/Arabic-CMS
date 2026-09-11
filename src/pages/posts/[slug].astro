@@ -131,7 +131,7 @@ const publishedAtIso = post.data.publishedAt?.toISOString() ?? null;
 			"description": post.data.excerpt || seo.description,
 			"datePublished": post.data.publishedAt?.toISOString(),
 			"dateModified": post.data.updatedAt.toISOString(),
-			"mainEntityOfPage": Astro.url.href,
+			"mainEntityOfPage": seo.canonical || Astro.url.href,
 			"author": bylines.map((b) => ({
 				"@type": "Person",
 				"name": b.byline.displayName,

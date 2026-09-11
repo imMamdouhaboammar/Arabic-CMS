@@ -21,10 +21,16 @@ export const GET: APIRoute = async ({ site, url }) => {
 	const items = posts
 		.map((post) => {
 			if (!post.data.publishedAt) return null;
-			const pubDate = post.data.publishedAt.toUTCString();
 
+			const titleText = typeof post.data.title === "string" ? post.data.title.trim() : "";
+			if (!titleText) {
+				console.warn(`rss: skipping published post without title (${post.id})`);
+				return null;
+			}
+
+			const pubDate = post.data.publishedAt.toUTCString();
 			const postUrl = `${siteUrl}/posts/${post.id}`;
-			const title = escapeXml(post.data.title || "Untitled");
+			const title = escapeXml(titleText);
 			const description = escapeXml(post.data.excerpt || "");
 
 			return `    <item>

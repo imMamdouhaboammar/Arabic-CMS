@@ -78,6 +78,16 @@ npm run typecheck
 npm run build
 ```
 
+## Branch protection
+
+`main` is protected by the active repository ruleset **Protect main — require Quality** ([ruleset](https://github.com/imMamdouhaboammar/Arabic-CMS/rules/23019795)):
+
+- Required status check: GitHub Actions job `verify` (Quality workflow)
+- Strict policy: the PR branch must be up to date with `main` before merge
+- Force-pushes and branch deletion on `main` are blocked
+- No bypass actors are configured; emergency changes need an explicit ruleset edit by a repo admin
+
+
 ## Repository map
 
 | Path | Purpose |

@@ -301,6 +301,13 @@ const isLoggedIn = !!Astro.locals.user;
 				document.querySelectorAll<HTMLButtonElement>(".theme-btn");
 			const root = document.documentElement;
 
+			function normalizeTheme(theme: string | null | undefined): "light" | "dark" | "system" {
+				if (theme === "light" || theme === "dark" || theme === "system") {
+					return theme;
+				}
+				return "system";
+			}
+
 			function setCookie(
 				name: string,
 				value: string,
@@ -315,15 +322,16 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			function setTheme(theme: string) {
-				if (theme === "system") {
+				const next = normalizeTheme(theme);
+				if (next === "system") {
 					setCookie("theme", "");
 					root.classList.remove("light", "dark");
 				} else {
-					setCookie("theme", theme);
+					setCookie("theme", next);
 					root.classList.remove("light", "dark");
-					root.classList.add(theme);
+					root.classList.add(next);
 				}
-				updateActiveBtn(theme);
+				updateActiveBtn(next);
 			}
 
 			function updateActiveBtn(theme: string) {
@@ -334,9 +342,9 @@ const isLoggedIn = !!Astro.locals.user;
 				});
 			}
 
-			function getStoredTheme(): string {
+			function getStoredTheme(): "light" | "dark" | "system" {
 				const match = document.cookie.match(THEME_REGEX);
-				return match ? match[1] : "system";
+				return normalizeTheme(match ? match[1] : "system");
 			}
 
 			// Initialize

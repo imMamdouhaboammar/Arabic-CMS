@@ -58,6 +58,7 @@ A blog with posts, pages, categories, tags, full-text search, and RSS. Designed 
 | Category    | `/category/[slug]` | Posts filtered by category                                                                             |
 | Tag         | `/tag/[slug]`      | Posts filtered by tag                                                                                  |
 | RSS         | `/rss.xml`         | Generated feed                                                                                         |
+| Robots      | `/robots.txt`      | Advisory crawler policy (allows public content; disallows `/_emdash/`)                                 |
 
 ## Schema
 

@@ -46,7 +46,10 @@ const {
 const [siteSettings, menu, { entries: pages, error: pagesError }] = await Promise.all([
 	getSiteSettings(),
 	getMenu("primary"),
-	getEmDashCollection("pages"),
+	getEmDashCollection("pages", {
+		status: "published",
+		limit: 3,
+	}),
 ]);
 
 if (pagesError) {

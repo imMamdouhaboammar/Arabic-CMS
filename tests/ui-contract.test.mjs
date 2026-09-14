@@ -75,8 +75,9 @@ test("public shell preserves CMS pages without sequential queries", async () => 
   assert.doesNotMatch(base, /getMenu\("social"\)/);
   assert.match(
     base,
-    /Promise\.all\(\[\s*getSiteSettings\(\),\s*getMenu\("primary"\),\s*getEmDashCollection\("pages"\),?\s*\]\)/s,
+    /Promise\.all\(\[\s*getSiteSettings\(\),\s*getMenu\("primary"\),\s*getEmDashCollection\("pages",\s*\{\s*status:\s*"published",\s*limit:\s*3,\s*\}\),?\s*\]\)/s,
   );
+  assert.match(base, /getEmDashCollection\("pages",\s*\{[\s\S]*?limit:\s*3/);
   assert.match(base, /pages\.slice\(0, 3\)\.map/);
   assert.doesNotMatch(base, /<h4 class="footer-heading">/);
 });

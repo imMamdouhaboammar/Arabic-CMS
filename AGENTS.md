@@ -57,7 +57,7 @@ A blog with posts, pages, categories, tags, full-text search, and RSS. Designed 
 | Page        | `/pages/[slug]`    | Static page content (Portable Text)                                                                    |
 | Category    | `/category/[slug]` | Posts filtered by category                                                                             |
 | Tag         | `/tag/[slug]`      | Posts filtered by tag                                                                                  |
-| RSS         | `/rss.xml`         | Generated feed                                                                                         |
+| RSS         | `/rss.xml`         | Generated feed + head `rel=alternate` autodiscovery                                                    |
 | Robots      | `/robots.txt`      | Advisory crawler policy (allows public content; disallows `/_emdash/`)                                 |
 
 ## Schema

@@ -12,8 +12,9 @@ export interface BlogSiteIdentitySettings {
 	favicon?: MediaReference;
 }
 
-const DEFAULT_SITE_TITLE = "My Blog";
-const DEFAULT_SITE_TAGLINE = "Thoughts, stories, and ideas.";
+/** Arabic-first fallbacks when site settings are missing or incomplete. */
+const DEFAULT_SITE_TITLE = "ممدوح أبو عمار";
+const DEFAULT_SITE_TAGLINE = "أفكار في هندسة البرمجيات وأدوات المطورين";
 
 export function resolveBlogSiteIdentity(settings?: BlogSiteIdentitySettings) {
 	return {

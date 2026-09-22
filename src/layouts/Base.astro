@@ -46,7 +46,10 @@ const {
 const [siteSettings, menu, { entries: pages, error: pagesError }] = await Promise.all([
 	getSiteSettings(),
 	getMenu("primary"),
-	getEmDashCollection("pages"),
+	getEmDashCollection("pages", {
+		status: "published",
+		limit: 3,
+	}),
 ]);
 
 if (pagesError) {
@@ -87,6 +90,12 @@ const isLoggedIn = !!Astro.locals.user;
 		<Font cssVariable="--font-mono" />
 		<title>{fullTitle}</title>
 		<EmDashHead page={pageCtx} />
+		<link
+			rel="alternate"
+			type="application/rss+xml"
+			title={`${siteTitle} — موجز RSS`}
+			href="/rss.xml"
+		/>
 		<script
 			type="application/ld+json"
 			is:inline
@@ -104,8 +113,8 @@ const isLoggedIn = !!Astro.locals.user;
 			// With no cookie, color-scheme: light dark follows the OS.
 			(function () {
 				var c = document.cookie;
-				var i = c.indexOf("theme=");
-				var theme = i >= 0 ? c.slice(i + 6).split(";")[0] : null;
+				var m = c.match(/(?:^|;\s*)theme=([^;]*)/);
+				var theme = m ? m[1] : null;
 				if (theme === "dark" || theme === "light") {
 					document.documentElement.classList.add(theme);
 				}
@@ -296,10 +305,17 @@ const isLoggedIn = !!Astro.locals.user;
 
 		<script>
 			// Theme switcher
-			const THEME_REGEX = /theme=([^;]+)/;
+			const THEME_REGEX = /(?:^|;\s*)theme=([^;]*)/;
 			const themeBtns =
 				document.querySelectorAll<HTMLButtonElement>(".theme-btn");
 			const root = document.documentElement;
+
+			function normalizeTheme(theme: string | null | undefined): "light" | "dark" | "system" {
+				if (theme === "light" || theme === "dark" || theme === "system") {
+					return theme;
+				}
+				return "system";
+			}
 
 			function setCookie(
 				name: string,
@@ -315,15 +331,16 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			function setTheme(theme: string) {
-				if (theme === "system") {
+				const next = normalizeTheme(theme);
+				if (next === "system") {
 					setCookie("theme", "");
 					root.classList.remove("light", "dark");
 				} else {
-					setCookie("theme", theme);
+					setCookie("theme", next);
 					root.classList.remove("light", "dark");
-					root.classList.add(theme);
+					root.classList.add(next);
 				}
-				updateActiveBtn(theme);
+				updateActiveBtn(next);
 			}
 
 			function updateActiveBtn(theme: string) {
@@ -334,9 +351,9 @@ const isLoggedIn = !!Astro.locals.user;
 				});
 			}
 
-			function getStoredTheme(): string {
+			function getStoredTheme(): "light" | "dark" | "system" {
 				const match = document.cookie.match(THEME_REGEX);
-				return match ? match[1] : "system";
+				return normalizeTheme(match ? match[1] : "system");
 			}
 
 			// Initialize

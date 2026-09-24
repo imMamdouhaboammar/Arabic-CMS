@@ -1,4 +1,5 @@
 ---
+import { getPublicOrigin } from "../utils/public-origin";
 import { getEmDashCollection, getMenu, getSiteSettings } from "emdash";
 import {
 	WidgetArea,
@@ -75,6 +76,7 @@ const pageCtx = createPublicPageContext({
 	seo: { ogImage: image, robots },
 	articleMeta: { publishedTime, modifiedTime, author },
 	siteName: siteTitle,
+	siteUrl: getPublicOrigin(Astro.site, Astro.url),
 });
 
 // Check if user is logged in (for showing admin link)
@@ -104,7 +106,7 @@ const isLoggedIn = !!Astro.locals.user;
 				"@type": "WebSite",
 				"name": siteTitle,
 				"description": siteTagline,
-				"url": Astro.url.origin,
+				"url": getPublicOrigin(Astro.site, Astro.url),
 				"inLanguage": "ar"
 			})}
 		/>

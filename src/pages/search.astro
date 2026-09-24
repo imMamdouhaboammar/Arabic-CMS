@@ -18,6 +18,7 @@ const { items: results } = query
 <Base
 	title={query ? `البحث: ${query}` : "البحث"}
 	description="البحث في مقالات وتدوينات الموقع"
+	robots={query ? "noindex, follow" : null}
 >
 	<section class="search-page">
 		<h1 class="search-title">البحث</h1>

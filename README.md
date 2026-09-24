@@ -21,7 +21,7 @@ Seeded site identity (from `seed/seed.json` / `metadata.json`):
 
 - No Cloudflare / D1 / R2 variant in this repo (remove upstream template links that pointed at sibling templates)
 - Backup *automation* for SQLite + uploads is tracked separately (see `docs/backup-and-restore.md` and open Issue #15 / PR #124)
-- Canonical package-manager enforcement is still an open product decision (Issue #114 / #115); CI currently installs with **npm** via `package-lock.json`
+- **npm** is the only supported package manager (`package-lock.json`, CI, and Hostinger all use it)
 
 ## Routes
 
@@ -35,6 +35,8 @@ Seeded site identity (from `seed/seed.json` / `metadata.json`):
 | Search | `/search` |
 | Static pages | `/pages/:slug` |
 | RSS | `/rss.xml` |
+| Sitemap | `/sitemap.xml` |
+| Health check | `/healthz` |
 | Admin | `/_emdash/admin` |
 | 404 / 500 | fallback pages |
 
@@ -45,8 +47,8 @@ Seeded site identity (from `seed/seed.json` / `metadata.json`):
 | Runtime | Node.js 22 (Quality workflow) |
 | Framework | Astro + `@astrojs/node` (standalone) |
 | CMS | EmDash (`emdash`, `@emdash-cms/plugin-audit-log`) |
-| Database | SQLite (`file:./data.db`) |
-| Media | Local filesystem (`./uploads`) |
+| Database | SQLite (`./data.db` locally, `CMS_DATA_DIR` in production) |
+| Media | Local filesystem (`./uploads` locally, `CMS_DATA_DIR/uploads` in production) |
 | UI fonts | IBM Plex Sans Arabic + JetBrains Mono |
 
 ## Setup
@@ -67,6 +69,10 @@ Production-style start after a build:
 npm run build
 npm start
 ```
+
+## Deployment
+
+Production target is Hostinger. Read [docs/deploy-hostinger.md](docs/deploy-hostinger.md) first: the database and uploads must live outside the deploy directory via `CMS_DATA_DIR`.
 
 ## Verification
 

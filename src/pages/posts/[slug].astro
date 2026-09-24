@@ -1,4 +1,5 @@
 ---
+import { getPublicOrigin } from "../../utils/public-origin";
 import {
 	getEmDashEntry,
 	getEmDashCollection,
@@ -17,7 +18,7 @@ import PostCard from "../../components/PostCard.astro";
 import { getReadingTime, formatReadingTime } from "../../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../../utils/site-identity";
 import { serializeJsonLd } from "../../utils/json-ld.js";
-import { createPublicQueryErrorResponse } from "../../utils/public-query-error.js";
+import { createPublicQueryErrorResponse, isEntryNotFoundError } from "../../utils/public-query-error.js";
 
 const slug = decodeSlug(Astro.params.slug);
 
@@ -25,7 +26,10 @@ if (!slug) {
 	return Astro.rewrite("/404");
 }
 
-const { entry: post, cacheHint, error: postError } = await getEmDashEntry("posts", slug);
+const { entry: post, cacheHint, error: postQueryError } = await getEmDashEntry("posts", slug);
+
+// A missing slug is reported as an error; treat it as "no entry" (404).
+const postError = isEntryNotFoundError(postQueryError) ? undefined : postQueryError;
 
 if (postError) {
 	return createPublicQueryErrorResponse("posts:entry", postError);
@@ -44,14 +48,14 @@ function getImageUrl(img: unknown): string | undefined {
 	if (typeof image.src === "string" && image.src) {
 		return image.src.startsWith("http")
 			? image.src
-			: `${Astro.url.origin}${image.src}`;
+			: `${getPublicOrigin(Astro.site, Astro.url)}${image.src}`;
 	}
 	const meta = image.meta as Record<string, unknown> | undefined;
 	const storageKey =
 		(typeof meta?.storageKey === "string" ? meta.storageKey : undefined) ||
 		(typeof image.id === "string" ? image.id : undefined);
 	if (storageKey) {
-		return `${Astro.url.origin}/_emdash/api/media/file/${storageKey}`;
+		return `${getPublicOrigin(Astro.site, Astro.url)}/_emdash/api/media/file/${storageKey}`;
 	}
 	return undefined;
 }
@@ -61,7 +65,7 @@ const { siteTitle } = resolveBlogSiteIdentity(await getSiteSettings());
 // Generate SEO meta from content
 const seo = getSeoMeta(post, {
 	siteTitle,
-	siteUrl: Astro.url.origin,
+	siteUrl: getPublicOrigin(Astro.site, Astro.url),
 	path: `/posts/${slug}`,
 	defaultOgImage: featuredImageUrl,
 });

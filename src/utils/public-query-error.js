@@ -4,6 +4,19 @@ function logPublicQueryError(context, error) {
 	console.error(`[public-content] ${context}`, error);
 }
 
+/**
+ * EmDash (via Astro live collections) reports a missing slug as a
+ * LiveEntryNotFoundError instead of an empty entry. That is a 404, not a
+ * server failure, so routes must check this before treating `error` as fatal.
+ */
+export function isEntryNotFoundError(error) {
+	return (
+		typeof error === "object" &&
+		error !== null &&
+		error.name === "LiveEntryNotFoundError"
+	);
+}
+
 export function createPublicQueryErrorResponse(context, error) {
 	logPublicQueryError(context, error);
 

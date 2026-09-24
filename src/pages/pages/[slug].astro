@@ -2,7 +2,7 @@
 import { getEmDashEntry, decodeSlug } from "emdash";
 import { PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
-import { createPublicQueryErrorResponse } from "../../utils/public-query-error.js";
+import { createPublicQueryErrorResponse, isEntryNotFoundError } from "../../utils/public-query-error.js";
 
 const slug = decodeSlug(Astro.params.slug);
 
@@ -10,7 +10,10 @@ if (!slug) {
 	return Astro.rewrite("/404");
 }
 
-const { entry: page, cacheHint, error: pageError } = await getEmDashEntry("pages", slug);
+const { entry: page, cacheHint, error: pageQueryError } = await getEmDashEntry("pages", slug);
+
+// A missing slug is reported as an error; treat it as "no entry" (404).
+const pageError = isEntryNotFoundError(pageQueryError) ? undefined : pageQueryError;
 
 if (pageError) {
 	return createPublicQueryErrorResponse("pages:entry", pageError);

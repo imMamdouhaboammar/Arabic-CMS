@@ -52,10 +52,10 @@ The command deliberately does not stop application/editor writes for you. First 
 npm run backup -- --confirm-quiesced
 ```
 
-Defaults:
+Defaults follow the same settings the site uses (`CMS_DATA_DIR`, `CMS_DATABASE_PATH`, `CMS_UPLOADS_DIR`, read from the environment or `.env`; see [deploy-hostinger.md](deploy-hostinger.md)):
 
-- source database: `data.db`
-- source media: `uploads/`
+- source database: `$CMS_DATA_DIR/data.db`, else `data.db`
+- source media: `$CMS_DATA_DIR/uploads/`, else `uploads/`
 - destination root: `backups/`
 
 For an explicit deployment layout:
@@ -81,6 +81,10 @@ Each completed backup is published as one timestamped `backup-*` directory conta
 The operation builds the set under a `.partial-*` directory and renames it to `backup-*` only after snapshot, media capture, checksum validation, file synchronization, directory synchronization, and a synced `COMPLETE` marker succeed. If the output root does not already exist, every newly created output directory plus the nearest pre-existing ancestor is synchronized so the new directory entries are durable. The output parent directory is also synchronized before and after the final rename on platforms that support directory fsync. A `.partial-*` directory or a set without `COMPLETE` is never a valid restore source. Normal failures are cleaned up and exit non-zero; an unexpected process or host interruption may leave a `.partial-*` directory that operators must treat as incomplete.
 
 Symbolic links and non-regular entries under `uploads/` are rejected rather than followed into the backup.
+
+Every file in a published set, including the `data.db` snapshot, is owner-only (`0600`) inside owner-only (`0700`) directories.
+
+Threat model for media capture: the checks above stop symlinks that already exist, and file-level swaps during the copy. They do not fully close a race where another local process with write access to `uploads/` swaps a whole *directory* for a symlink between validation and traversal. Node.js has no `openat`-style API for descriptor-relative directory walks, so closing that race would need a native helper. It is out of scope because the capture already requires writes to be stopped (`--confirm-quiesced`), and a process that can rewrite `uploads/` during that window can already change the site's media directly. Run backups as the same user that owns the CMS data, with no other writers active.
 
 The default `backups/` directory is excluded from Git. Production backup destinations should live on storage with the access, encryption, retention, and durability controls required by the deployment.
 

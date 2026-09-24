@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { constants as fsConstants } from "node:fs";
 import {
+  chmod,
   lstat,
   mkdir,
   open,
@@ -13,9 +14,22 @@ import {
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
+import { resolvePersistencePaths } from "../src/utils/runtime-paths.mjs";
+
+// Default to the same database and uploads the site uses: CMS_DATA_DIR,
+// CMS_DATABASE_PATH and CMS_UPLOADS_DIR from the environment or .env,
+// falling back to ./data.db and ./uploads.
+try {
+  process.loadEnvFile();
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
+
+const persistence = resolvePersistencePaths();
+
 const DEFAULTS = {
-  sourceDb: "data.db",
-  sourceUploads: "uploads",
+  sourceDb: persistence.databaseUrl.slice("file:".length),
+  sourceUploads: persistence.uploadsDir,
   output: "backups",
 };
 
@@ -61,9 +75,9 @@ function parseArgs(argv) {
       console.log(`Usage:
   npm run backup -- --confirm-quiesced [--source-db PATH] [--source-uploads PATH] [--output PATH]
 
-Defaults:
-  --source-db data.db
-  --source-uploads uploads
+Defaults (from CMS_DATA_DIR / CMS_DATABASE_PATH / CMS_UPLOADS_DIR when set):
+  --source-db ${DEFAULTS.sourceDb}
+  --source-uploads ${DEFAULTS.sourceUploads}
   --output backups
 
 The command refuses to run unless --confirm-quiesced is supplied.`);
@@ -225,6 +239,10 @@ async function createDatabaseSnapshot(sourceDb, destinationDb) {
   } finally {
     database.close();
   }
+
+  // SQLite creates the snapshot with the process umask (often 0644). Keep it
+  // owner-only like every other file in the backup set.
+  await chmod(destinationDb, 0o600);
 
   const snapshot = new DatabaseSync(destinationDb, { readOnly: true });
   try {

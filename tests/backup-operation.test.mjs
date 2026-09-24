@@ -6,7 +6,9 @@ import {
   mkdir,
   readFile,
   readdir,
+  rename,
   rm,
+  stat,
   symlink,
   writeFile,
 } from "node:fs/promises";
@@ -20,11 +22,15 @@ const backupScript = new URL("../scripts/backup.mjs", import.meta.url);
 const sha256 = async (path) =>
   createHash("sha256").update(await readFile(path)).digest("hex");
 
-const runBackup = (args, cwd) =>
+const runBackup = (args, cwd, extraEnv = {}) =>
   new Promise((resolve) => {
     const child = spawn(process.execPath, [backupScript.pathname, ...args], {
       cwd,
-      env: { ...process.env, EMDASH_ENCRYPTION_KEY: "must-not-be-read" },
+      env: {
+        ...process.env,
+        EMDASH_ENCRYPTION_KEY: "must-not-be-read",
+        ...extraEnv,
+      },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";
@@ -137,6 +143,61 @@ test("backup command creates one complete integrity-checkable recovery set witho
     const manifestText = await readFile(join(setRoot, "manifest.json"), "utf8");
     assert.doesNotMatch(manifestText, /must-not-be-read/);
     assert.doesNotMatch(manifestText, /EMDASH_ENCRYPTION_KEY/);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("backup snapshot database is owner-only like the rest of the set", async () => {
+  const fixture = await createFixture();
+
+  try {
+    const result = await runBackup(
+      [
+        "--source-db",
+        fixture.dbPath,
+        "--source-uploads",
+        fixture.uploadsPath,
+        "--output",
+        fixture.outputPath,
+        "--confirm-quiesced",
+      ],
+      fixture.root,
+    );
+    assert.equal(result.code, 0, result.stderr || result.stdout);
+
+    const [setName] = await readdir(fixture.outputPath);
+    const mode = (await stat(join(fixture.outputPath, setName, "data.db"))).mode & 0o777;
+    assert.equal(mode, 0o600);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("backup defaults follow CMS_DATA_DIR so production state is captured", async () => {
+  const fixture = await createFixture();
+
+  try {
+    const dataDir = join(fixture.root, "cms-data");
+    await mkdir(dataDir);
+    await rename(fixture.dbPath, join(dataDir, "data.db"));
+    await rename(fixture.uploadsPath, join(dataDir, "uploads"));
+
+    const result = await runBackup(
+      ["--output", fixture.outputPath, "--confirm-quiesced"],
+      fixture.root,
+      { CMS_DATA_DIR: dataDir, CMS_DATABASE_PATH: "", CMS_UPLOADS_DIR: "" },
+    );
+    assert.equal(result.code, 0, result.stderr || result.stdout);
+
+    const [setName] = await readdir(fixture.outputPath);
+    const manifest = JSON.parse(
+      await readFile(join(fixture.outputPath, setName, "manifest.json"), "utf8"),
+    );
+    assert.deepEqual(
+      manifest.files.map((entry) => entry.path).sort(),
+      ["data.db", "uploads/image.txt", "uploads/nested/asset.txt"],
+    );
   } finally {
     await rm(fixture.root, { recursive: true, force: true });
   }

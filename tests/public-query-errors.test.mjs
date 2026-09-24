@@ -102,14 +102,15 @@ for (const contract of responseBoundaries) {
     assert.match(
       source,
       new RegExp(
-        `import\\s+\\{\\s*createPublicQueryErrorResponse\\s*\\}\\s+from\\s+["']${contract.importPath.replaceAll(".", "\\.")}["']`,
+        `import\\s+\\{[^}]*\\bcreatePublicQueryErrorResponse\\b[^}]*\\}\\s+from\\s+["']${contract.importPath.replaceAll(".", "\\.")}["']`,
       ),
     );
 
     for (const errorName of contract.errors) {
       assert.match(
         source,
-        new RegExp(`\\berror\\s*:\\s*${errorName}\\b`),
+        // Either captured directly, or derived after filtering "entry not found".
+        new RegExp(`\\berror\\s*:\\s*${errorName}\\b|\\bconst\\s+${errorName}\\s*=\\s*isEntryNotFoundError\\(`),
         `expected ${contract.path} to capture ${errorName}`,
       );
       assert.match(

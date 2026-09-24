@@ -4,8 +4,23 @@ import auditLog from "@emdash-cms/plugin-audit-log";
 import { defineConfig, fontProviders } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+
+import { resolvePersistencePaths, resolveSiteUrl } from "./src/utils/runtime-paths.mjs";
+
+const persistence = resolvePersistencePaths();
+const siteUrl = resolveSiteUrl();
+
+if (persistence.configured) {
+	// Create the external state directories up front so the first request
+	// does not fail on a fresh host.
+	mkdirSync(dirname(persistence.databaseUrl.slice("file:".length)), { recursive: true });
+	mkdirSync(persistence.uploadsDir, { recursive: true });
+}
 
 export default defineConfig({
+	site: siteUrl,
 	i18n: {
 		defaultLocale: "ar",
 		locales: ["ar"],
@@ -28,12 +43,13 @@ export default defineConfig({
 			fonts: {
 				scripts: ["arabic"],
 			},
-			database: sqlite({ url: "file:./data.db" }),
+			database: sqlite({ url: persistence.databaseUrl }),
 			storage: local({
-				directory: "./uploads",
+				directory: persistence.uploadsDir,
 				baseUrl: "/_emdash/api/media/file",
 			}),
 			plugins: [auditLog],
+			...(siteUrl ? { siteUrl } : {}),
 		}),
 	],
 	fonts: [

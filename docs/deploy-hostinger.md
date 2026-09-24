@@ -60,9 +60,9 @@ git clone https://github.com/imMamdouhaboammar/Arabic-CMS.git /srv/arabic-cms/ap
 cd /srv/arabic-cms/app
 cp .env.example .env   # fill in SITE_URL, CMS_DATA_DIR=/srv/arabic-cms/data, EMDASH_ENCRYPTION_KEY
 npm ci
-set -a; . ./.env; set +a
-npm run build
-PORT=3000 npm start    # run under pm2 or systemd in practice
+npm run build          # astro.config.mjs loads .env itself
+set -a; . ./.env; set +a   # the running server also needs EMDASH_ENCRYPTION_KEY
+HOST=127.0.0.1 PORT=3000 npm start    # loopback only; run under pm2 or systemd in practice
 ```
 
 Put Nginx (or Caddy) in front for TLS and proxy to `127.0.0.1:3000`.

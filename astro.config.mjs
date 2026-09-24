@@ -9,6 +9,15 @@ import { dirname } from "node:path";
 
 import { resolvePersistencePaths, resolveSiteUrl } from "./src/utils/runtime-paths.mjs";
 
+// Astro does not load .env into process.env while evaluating this file.
+// Load it explicitly so a `.env`-based deploy resolves the same paths as one
+// using host-panel variables. Real environment variables still win.
+try {
+	process.loadEnvFile();
+} catch (error) {
+	if (error?.code !== "ENOENT") throw error;
+}
+
 const persistence = resolvePersistencePaths();
 const siteUrl = resolveSiteUrl();
 
@@ -68,5 +77,11 @@ export default defineConfig({
 			fallbacks: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
 		},
 	],
+	vite: {
+		define: {
+			// Lets /healthz probe the exact SQLite file EmDash was built against.
+			"import.meta.env.CMS_DATABASE_URL": JSON.stringify(persistence.databaseUrl),
+		},
+	},
 	devToolbar: { enabled: false },
 });

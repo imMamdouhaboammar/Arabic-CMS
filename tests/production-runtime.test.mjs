@@ -61,6 +61,14 @@ test("astro config wires persistence paths and canonical site into EmDash", asyn
   assert.doesNotMatch(config, /"file:\.\/data\.db"/);
 });
 
+test("astro config loads .env before resolving persistence paths", async () => {
+  const config = await read("astro.config.mjs");
+  const loadIndex = config.indexOf("process.loadEnvFile()");
+  assert.ok(loadIndex > 0, "astro.config.mjs must load .env");
+  assert.ok(loadIndex < config.indexOf("resolvePersistencePaths()"));
+  assert.match(config, /code !== "ENOENT"/);
+});
+
 test("start script lets the host inject PORT and HOST", async () => {
   const pkg = JSON.parse(await read("package.json"));
   assert.equal(pkg.scripts.start, "node ./dist/server/entry.mjs");
@@ -79,6 +87,10 @@ test("health endpoint reports database reachability without leaking details", as
   const source = await read("src/pages/healthz.ts");
   assert.match(source, /export const GET: APIRoute/);
   assert.match(source, /status: ok \? 200 : 503/);
+  // Must hit SQLite on every call; getSiteSettings() is cached across requests.
+  assert.match(source, /new DatabaseSync\(path, \{ readOnly: true \}\)/);
+  assert.match(source, /import\.meta\.env\.CMS_DATABASE_URL/);
+  assert.doesNotMatch(source, /getSiteSettings/);
   assert.match(source, /"Cache-Control": "no-store"/);
   assert.doesNotMatch(source, /error\.message|stack/);
 });

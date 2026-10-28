@@ -73,7 +73,7 @@ test("start script lets the host inject PORT and HOST", async () => {
   const pkg = JSON.parse(await read("package.json"));
   assert.equal(pkg.scripts.start, "node ./dist/server/entry.mjs");
   assert.doesNotMatch(pkg.scripts.start, /PORT=|HOST=/);
-  assert.equal(pkg.engines.node, ">=22.16.0");
+  assert.equal(pkg.engines.node, ">=22.23.4");
 });
 
 test("npm is the only package manager: no pnpm workspace file, npm lockfile present", async () => {
